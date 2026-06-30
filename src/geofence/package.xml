@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>geofence</name>
+  <version>0.0.0</version>
+  <description>Geofencing package for obstacle management and map updates</description>
+  <maintainer email="ndietz@todo.todo">ndietz</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- Build tool -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Build dependencies -->
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclcpp_lifecycle</build_depend>
+  <build_depend>rclcpp_components</build_depend>
+  <build_depend>lifecycle_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>rises_interfaces</build_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
+  <build_depend>diagnostic_updater</build_depend>
+
+  <!-- System library dependencies (required) -->
+  <build_depend>libboost-dev</build_depend>
+
+  <!-- System libraries used unconditionally by CMake (each Find module first
+       looks for the system package, then falls back to FetchContent-from-source
+       if absent). Declared as rosdep keys so `rosdep install` provisions them:
+       - liburcu-dev:        RCU lock-free synchronization
+       - libeigen3-dev:      linear algebra
+       - libnanoflann-dev:   spatial index (KD-tree)
+       - nlohmann-json3-dev: JSON parsing -->
+  <depend>liburcu-dev</depend>
+  <depend>libeigen3-dev</depend>
+  <depend>libnanoflann-dev</depend>
+  <depend>nlohmann-json3-dev</depend>
+
+  <!-- Conditional: libxsimd-dev is only needed when building with USE_SIMD=ON.
+       Not a hard rosdep key for the default build; FindXSIMD.cmake fetches it
+       from GitHub when USE_SIMD=ON and it is not installed. Install manually for
+       SIMD builds: sudo apt install libxsimd-dev -->
+  <test_depend>libxsimd-dev</test_depend>
+
+  <!-- Execution/runtime dependencies -->
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rclcpp_lifecycle</exec_depend>
+  <exec_depend>rclcpp_components</exec_depend>
+  <exec_depend>lifecycle_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>rises_interfaces</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>diagnostic_updater</exec_depend>
+
+  <!-- System library runtime dependencies (required) -->
+  <exec_depend>libboost-dev</exec_depend>
+
+  <!-- Test dependencies -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>test_support</test_depend>
+
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

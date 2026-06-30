@@ -1,0 +1,47 @@
+{
+  "id": "set_safety_radius",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/SetSafetyRadius",
+  "default_path": "/skill/set_safety_radius",
+  "description": "Adjusts the safety circle radius around the robot. A larger radius triggers obstacle alerts earlier, a smaller radius allows tighter navigation in narrow corridors.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "radius",
+        "type": "float32",
+        "description": "New safety radius in meters",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "success",
+        "type": "bool",
+        "description": "True if the radius was updated"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Result description or error"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current operation status"
+      }
+    ]
+  }
+}

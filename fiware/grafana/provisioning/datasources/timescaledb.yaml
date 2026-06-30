@@ -1,0 +1,22 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: TimescaleDB
+    orgId: 1
+
+datasources:
+  - name: TimescaleDB
+    uid: timescaledb
+    type: grafana-postgresql-datasource
+    access: proxy
+    url: localhost:5432
+    database: orion
+    user: postgres
+    secureJsonData:
+      password: postgres
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1700
+      timescaledb: true
+    isDefault: true
+    editable: true

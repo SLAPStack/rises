@@ -1,0 +1,91 @@
+# ==============================================================================
+# CENTRAL BRIDGE NODE PARAMETERS
+# ==============================================================================
+#
+# Used by: message_translator_node running as centralized_translator in
+#          rises_bringup/launch/central.launch.py
+#
+# Environment variable overrides:
+#   All values support $(env VAR_NAME default) syntax.
+#   The launch system resolves substitutions when loaded via
+#   ParameterFile(allow_substs=True).
+#
+# Namespace: node runs without a ROS namespace (broadcasts to all AGVs),
+#   so the key uses the literal node name, not a wildcard namespace.
+# ==============================================================================
+
+/centralized_translator:
+  ros__parameters:
+
+    # -- Multi-robot topology -----------------------------------------------
+    # Number of AGVs this translator broadcasts map updates to.
+    # Each AGV is expected to expose  /agv_N/geofence_node/update_map.
+    agv_count: $(env AGV_COUNT 1)
+
+    # -- Map-update filtering -------------------------------------------------
+    # When true, only accept obstacle messages wrapped in a "pallets" key
+    # (bulk updates). Individual obstacle messages are discarded. Useful when
+    # playing rosbags that mix the initial bulk snapshot with subsequent
+    # individual runtime updates that should not alter the initial map.
+    bulk_only:            $(env TRANSLATOR_BULK_ONLY false)
+
+    # -- Map-update buffering -----------------------------------------------
+    # Buffer rapid successive map updates and flush as a single batch after
+    # buffer_timeout seconds of silence.
+    enable_buffering:     $(env TRANSLATOR_ENABLE_BUFFERING true)
+    buffer_timeout:       $(env TRANSLATOR_BUFFER_TIMEOUT 1.0)      # silence seconds
+
+    # -- Replay / TF publishing ---------------------------------------------
+    # Rate (Hz) at which buffered TF, scan, and validation messages are
+    # re-published after being received from the rosbag MQTT topics.
+    replay_rate: $(env TRANSLATOR_REPLAY_RATE 33.0)
+
+    # -- Coordinate frame ---------------------------------------------------
+    target_frame:        $(env TRANSLATOR_TARGET_FRAME map)
+    # tf_prefix is intentionally omitted – the node defaults to '' (no prefix).
+    # To override, export TRANSLATOR_TF_PREFIX and add:  tf_prefix: <value>
+    base_link_pub_rate:  $(env TRANSLATOR_BASE_LINK_PUB_RATE 20.0)
+
+    # -- Timing -------------------------------------------------------------
+    use_sim_time: $(env USE_SIM_TIME false)
+
+    # -- Geofence-ready handshake -------------------------------------------
+    # When true the translator waits for all AGV geofence nodes to signal
+    # that they are active before it starts forwarding map data.
+    wait_for_geofence_ready:  $(env TRANSLATOR_WAIT_FOR_GEOFENCE_READY false)
+    geofence_ready_timeout:   $(env TRANSLATOR_GEOFENCE_READY_TIMEOUT 30.0)
+
+    # -- Delivery method ------------------------------------------------------
+    # true  → service calls to /agv_N/update_map (acknowledged, per-AGV)
+    # false → publish to /warehouse/map_updates topic (broadcast, fire-and-forget)
+    use_service_for_map_updates: $(env TRANSLATOR_USE_SERVICE_FOR_MAP_UPDATES true)
+
+    # Maximum number of obstacle updates per service call chunk.
+    # Large batches (e.g. 4000+ obstacles) are split into chunks to avoid
+    # service timeouts.  Set to 0 to disable chunking (send all at once).
+    service_chunk_size: $(env TRANSLATOR_SERVICE_CHUNK_SIZE 1024)
+
+    # Timeout in seconds for each chunked service call response.
+    service_timeout: $(env TRANSLATOR_SERVICE_TIMEOUT 300.0)
+
+    # -- VDA5050 state publishing -------------------------------------------
+    position_source:     $(env TRANSLATOR_POSITION_SOURCE tf)
+    state_publish_rate:  $(env TRANSLATOR_STATE_PUBLISH_RATE 1.0)
+
+    # -- Initialization-ready signal ----------------------------------------
+    # When true the translator publishes initialization_ready=true on
+    # /initialization_ready after all AGV geofence nodes have confirmed map
+    # initialization.  Unity's InitializationReadySubscriber listens for this
+    # topic.  Requires wait_for_geofence_ready=true to have any effect.
+    publish_init_ready: $(env TRANSLATOR_PUBLISH_INIT_READY true)
+
+    # -- Order relay ---------------------------------------------------------
+    # When true the translator subscribes to raw per-AGV order topics from the
+    # rosbag (/mqtt/agv/id{N}/order) and republishes them on /agv_{N}/order.
+    # Orders are buffered and flushed after order_relay_delay seconds or when
+    # initialization_ready fires (whichever comes first).  This prevents
+    # orders from being lost due to DDS timing: the translator's subscribers
+    # are ready before the rosbag starts, whereas Unity's TCP-bridged
+    # subscribers may not be.
+    relay_orders:       $(env TRANSLATOR_RELAY_ORDERS true)
+    order_relay_delay:  $(env TRANSLATOR_ORDER_RELAY_DELAY 10.0)

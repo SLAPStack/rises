@@ -1,0 +1,24 @@
+/**/*:
+  ros__parameters:
+    broker:
+      host: "localhost"
+      port: 1883
+    bridge:
+      # --- MQTT → ROS: map/geofence data from slapstack ---
+      mqtt2ros:
+        mqtt_topics:
+          - "python/mqtt/agv/slapstack_map_contours"
+          - "python/mqtt/agv/update_discerning_safety_map"
+          - "python/mqtt/agv/area_locks"
+        "python/mqtt/agv/slapstack_map_contours":
+          ros_topic: "/mqtt/warehouse_contours"
+          primitive: true
+          ros_type: std_msgs/msg/String
+        "python/mqtt/agv/update_discerning_safety_map":
+          ros_topic: "/mqtt/discerning_safety_map"
+          primitive: true
+          ros_type: std_msgs/msg/String
+        "python/mqtt/agv/area_locks":
+          ros_topic: "/mqtt/area_locks"
+          primitive: true
+          ros_type: std_msgs/msg/String

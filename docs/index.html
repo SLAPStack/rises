@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARISE Geofence — Spatial Safety &amp; Obstacle Detection (RISES · D4)</title>
+<meta name="description" content="ROS 2 / Vulcanexus spatial-safety geofence for autonomous warehouse AGVs — the ARISE RISES reusable HRI module.">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">ARISE · RISES</span><span class="brand-sub">Geofence module</span></a>
+  <nav>
+    <a href="index.html" class="active">Overview</a>
+    <a href="docs.html">Docs</a>
+    <a href="kpi-dashboard.html">KPIs</a>
+    <a href="https://github.com/SLAPStack/rises" target="_blank" rel="noopener">GitHub ↗</a>
+  </nav>
+</header>
+
+<main class="shell">
+
+  <section class="hero">
+    <p class="eyebrow">ARISE Open Call 1 · Experiment RISES · D4 reusable HRI module</p>
+    <h1>A spatial-safety geofence for autonomous warehouse AGVs</h1>
+    <p class="lede">A ROS 2 / Vulcanexus module that matches 2-D LiDAR detections against a known
+    warehouse map and flags everything <strong>not</strong> in the map as a potential intruder —
+    raising a safety alert and a per-segment obstacle report, and exposing its state to the ARISE
+    middleware (FIWARE / NGSI-LD). It runs end-to-end <strong>without any robot hardware</strong>
+    from a recorded bag.</p>
+    <div class="cta">
+      <a class="btn primary" href="docs.html">Read the docs</a>
+      <a class="btn" href="kpi-dashboard.html">Validation KPIs</a>
+      <a class="btn" href="https://drive.google.com/file/d/1QFXvJPv2RzLDe1EQnjTharl72Os4S0RL/view" target="_blank" rel="noopener">Demonstrator video ↗</a>
+      <a class="btn" href="https://github.com/SLAPStack/rises" target="_blank" rel="noopener">Source ↗</a>
+    </div>
+  </section>
+
+  <section class="block">
+    <dl class="facts">
+      <div><dt>Inputs</dt><dd>2-D LiDAR segments, warehouse map, robot pose</dd></div>
+      <div><dt>Outputs</dt><dd><span class="m">obstacle_report</span>, <span class="m">obstacle_alert</span>, unmatched obstacles</dd></div>
+      <div><dt>HRI capability</dt><dd>detect &amp; flag people / novel obstacles in a safety zone</dd></div>
+      <div><dt>Platform</dt><dd>AiTEN EMP10S AGV · 2-D safety LiDAR</dd></div>
+      <div><dt>Middleware</dt><dd>ROS 2 Jazzy · Vulcanexus · FIWARE / NGSI-LD · ROS4HRI</dd></div>
+      <div><dt>Maturity</dt><dd>TRL ≈ 5 · validated, hardware-free reproducible</dd></div>
+    </dl>
+  </section>
+
+  <h2 class="section">Validation at a glance</h2>
+  <section class="block">
+    <div class="kpis">
+      <div class="kpibox"><span class="v">1.000</span><span class="k">Static Structure Match Rate</span><span class="t">target &gt; 0.98 · PASS</span></div>
+      <div class="kpibox"><span class="v">0.966</span><span class="k">Detection Ratio (85/88)</span><span class="t">target &gt; 0.95 · PASS</span></div>
+      <div class="kpibox"><span class="v">35.2<small> ms</small></span><span class="k">Detection Latency (avg)</span><span class="t">target &lt; 2 s · PASS</span></div>
+      <div class="kpibox"><span class="v">3.4<small> %</small></span><span class="k">Miss Rate</span><span class="t">target &lt; 10 % · PASS</span></div>
+    </div>
+    <p style="margin:14px 2px 0;font-size:13.5px;color:var(--muted)">Measured on the 300 s recorded warehouse scenario (88 spawned moving intruders, spatial backend).
+    <a href="kpi-dashboard.html">See the full KPI scorecard →</a></p>
+  </section>
+
+  <h2 class="section">Documentation</h2>
+  <section class="block">
+    <div class="cardgrid">
+      <a class="dcard" href="docs.html#00_overview.md"><span class="num">00</span><h3>Overview</h3><p>What the module is, off-the-shelf capabilities, quick start.</p></a>
+      <a class="dcard" href="docs.html#01_arise_context.md"><span class="num">01</span><h3>ARISE context</h3><p>Why it exists, milestone continuity, middleware role.</p></a>
+      <a class="dcard" href="docs.html#02_interfaces.md"><span class="num">02</span><h3>Interfaces</h3><p>ROS 2 / Vulcanexus, FIWARE / NGSI-LD, DDS-Enabler, ROS4HRI.</p></a>
+      <a class="dcard" href="docs.html#03_installation_and_hello_world.md"><span class="num">03</span><h3>Install &amp; hello world</h3><p>Docker, dependencies, the hardware-free run.</p></a>
+      <a class="dcard" href="docs.html#04_basic_demo_how_to_use.md"><span class="num">04</span><h3>Basic demo</h3><p>The scenario, commands, and expected KPI output.</p></a>
+      <a class="dcard" href="docs.html#05_role_in_demonstrator.md"><span class="num">05</span><h3>Role in demonstrator</h3><p>What became reusable and the validation evidence.</p></a>
+      <a class="dcard" href="docs.html#architecture.md"><span class="num">◇</span><h3>Architecture &amp; flows</h3><p>Component, per-scan, and operator interaction diagrams.</p></a>
+      <a class="dcard" href="docs.html#06_limitations.md"><span class="num">06</span><h3>Limitations</h3><p>Known limits, proprietary boundary, future work.</p></a>
+      <a class="dcard" href="docs.html#INTERACT_FULL_ARISE.md"><span class="num">▸</span><h3>Full ARISE interaction</h3><p>Drive the live stack through intents, skills, and tasks.</p></a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site">
+  ARISE · RISES (Robotics Integration for Smart Efficiency and Safety) — SLAPStack GmbH · Apache-2.0.
+  Built on <code>Vulcanexus Jazzy</code>. Co-funded by the European Union.
+</footer>
+
+</body>
+</html>

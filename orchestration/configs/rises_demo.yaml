@@ -1,0 +1,145 @@
+# ===============================================================================
+# ARISE Full Demo Configuration
+# ===============================================================================
+#
+# Launches the complete ARISE stack:
+#   - AGV container with geofence + skill bridge + heatmap predictor + fiware bridge
+#   - Bridge container with rosbag replay + message translator
+#   - FIWARE stack (Orion-LD + TimescaleDB + Grafana)
+#
+# Usage:
+#   # Build and run (first time):
+#   python3 -m orchestration.cli -c orchestration/configs/rises_demo.yaml --build
+#
+#   # Run (images already built):
+#   python3 -m orchestration.cli -c orchestration/configs/rises_demo.yaml
+#
+#   # Run with a specific bag file:
+#   python3 -m orchestration.cli -c orchestration/configs/rises_demo.yaml \
+#       --bag-file ~/rosbags/arise_warehouse_recording_final
+#
+#   # Disable FIWARE (just ROS nodes):
+#   python3 -m orchestration.cli -c orchestration/configs/rises_demo.yaml \
+#       --no-fiware
+#
+#   # Cleanup everything:
+#   python3 -m orchestration.cli --cleanup
+#
+# After launch:
+#   - Grafana: http://localhost:3000 (admin/admin)
+#   - Orion-LD: http://localhost:1026/version
+#   - Trigger task examples:
+#     ros2 service call /task_examples/run_safe_navigation std_srvs/srv/Trigger
+# ===============================================================================
+
+mode: central
+
+agv_namespaces:
+  - agv_0
+
+agv_scan_topic_remaps:
+  agv_0: "/mqtt/agv/id0/laserscan"
+
+ros_domain_id: 0
+startup_delay: 3.0
+health_check_interval: 5.0
+
+# ===============================================================================
+# Docker Settings
+# ===============================================================================
+docker:
+  network_mode: "host"
+  restart_policy: "no"
+  log_driver: "json-file"
+  log_max_size: "10m"
+  log_max_file: 3
+
+# ===============================================================================
+# FIWARE Stack (Orion-LD + TimescaleDB + Grafana)
+# ===============================================================================
+# Note: run "docker volume rm rises-fiware_timescale_data rises-fiware_mongodb_data"
+# before first launch to clear stale data from previous sessions.
+fiware:
+  enabled: true
+  fiware_namespaces:
+    - agv_0
+  compose_dir: "fiware"
+  grafana_port: 3000
+  timescale_port: 5432
+  mintaka_port: 8080
+  grafana_user: "admin"
+  grafana_password: "admin"
+
+# ===============================================================================
+# Bridge Container (central mode — rosbag replay + translator)
+# ===============================================================================
+bridge:
+  dockerfile: "central.dockerfile"
+
+  enable_buffering: true
+  buffer_timeout: 1.0
+  replay_rate: 33.0
+  target_frame: "map"
+  base_link_pub_rate: 20.0
+  use_sim_time: true
+
+  launch_rviz: false
+  rviz_namespace: "agv_0"
+
+  play_rosbag: true
+  bag_file: "resources/discerning_safety_humble"
+  rosbag_rate: 1.0
+  rosbag_loop: true
+  rosbag_delay: 5.0
+  storage: "sqlite3"
+
+  wait_for_geofence_ready: true
+  geofence_ready_timeout: 30.0
+  use_service_for_map_updates: false
+
+# ===============================================================================
+# AGV Container Settings
+# ===============================================================================
+agv:
+  # Use rises.dockerfile which includes all ARISE packages
+  image: "rises:base"
+  dockerfile: "rises.dockerfile"
+
+  scenario: "rosbag"
+
+  # ARISE mode: launches rises_geofence.launch.py instead of geofence.launch.py
+  rises_mode: true
+  launch_skill_bridge: true
+  launch_mission_controller: true     # full ARISE mode: reviewers drive missions via /intents (see docs/INTERACT_FULL_ARISE.md)
+  launch_heatmap: true
+  launch_fiware_bridge: true
+  launch_leg_filter: false            # requires unmatched_obstacles topic
+
+  # Geofence
+  enable_safety_circle: true
+  safety_circle_radius: 0.5
+  visualizer_enabled: false
+  target_frame: "map"
+  base_link_frame: "base_link"
+
+  # Laserscan
+  segment_distance_threshold: 0.2
+  segment_angle_threshold_deg: 30.0
+
+  # Static TF: agv_0_base_link -> agv_0_lidar (identity — lidar at robot center)
+  publish_static_tf: false
+  publish_lidar_static_tf: true
+  lidar_transform_x: 0.0
+  lidar_transform_y: 0.0
+  lidar_transform_z: 0.0
+  publish_unity_tf: false
+  publish_slapstack_tf: false
+
+  translator_enabled: false
+  use_service_for_map_updates: false
+  gridmap_enabled: false
+  validation_enabled: false
+  publish_report_always: true
+
+  use_sim_time: true
+  log_level: "info"

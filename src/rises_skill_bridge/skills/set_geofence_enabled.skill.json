@@ -1,0 +1,52 @@
+{
+  "id": "set_geofence_enabled",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/SetGeofenceEnabled",
+  "default_path": "/skill/set_geofence_enabled",
+  "description": "Enables or disables geofence enforcement. When disabled, obstacle alerts are suppressed and path validation always passes. Used for maintenance mode or manual override.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "enabled",
+        "type": "bool",
+        "description": "True to enable geofence enforcement, false to disable",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "success",
+        "type": "bool",
+        "description": "True if the state change was applied"
+      },
+      {
+        "name": "previous_state",
+        "type": "bool",
+        "description": "The enforcement state before this call"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Result description"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current operation status"
+      }
+    ]
+  }
+}

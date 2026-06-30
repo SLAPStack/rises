@@ -1,0 +1,5 @@
+# Service to get current warehouse contours from geofence node
+---
+
+# Response: Current warehouse contours
+rises_interfaces/Contours contours

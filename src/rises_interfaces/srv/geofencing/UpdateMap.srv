@@ -1,0 +1,11 @@
+# Service for bulk map updates (initialization)
+# Request: Array of obstacle updates to apply
+rises_interfaces/ObstacleUpdateArray updates
+
+---
+
+# Response: Success status and diagnostic info
+bool success
+string message
+int32 obstacles_added
+int32 obstacles_removed

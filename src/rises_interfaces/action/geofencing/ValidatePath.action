@@ -1,0 +1,9 @@
+# Goal
+nav_msgs/Path path
+---
+# Result
+bool blocked
+string message
+---
+# Feedback
+string status

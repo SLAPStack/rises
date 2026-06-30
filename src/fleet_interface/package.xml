@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>fleet_interface</name>
+  <version>0.1.0</version>
+  <description>
+    Per-AGV fleet interface node: VDA5050 order conversion and state publishing
+    (obstacle reports, robot position).
+  </description>
+  <maintainer email="niklas.dietz@gmx.de">ndietz</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>std_msgs</depend>
+  <depend>rises_interfaces</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <build_depend>nlohmann-json-dev</build_depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>test_support</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <rclcpp_components/>
+  </export>
+</package>

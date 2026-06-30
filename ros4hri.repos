@@ -1,0 +1,17 @@
+repositories:
+  architecture_schemas:
+    type: git
+    url: https://github.com/ros4hri/architecture_schemas.git
+    version: main
+  architecture_tools:
+    type: git
+    url: https://github.com/ros4hri/architecture_tools.git
+    version: main
+  std_skills:
+    type: git
+    url: https://github.com/ros4hri/std_skills.git
+    version: main
+  navigation_skills:
+    type: git
+    url: https://github.com/ros4hri/navigation_skills.git
+    version: main

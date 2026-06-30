@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs — ARISE Geofence (RISES · D4)</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">ARISE · RISES</span><span class="brand-sub">Geofence module</span></a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="docs.html" class="active">Docs</a>
+    <a href="kpi-dashboard.html">KPIs</a>
+    <a href="https://github.com/SLAPStack/rises" target="_blank" rel="noopener">GitHub ↗</a>
+  </nav>
+</header>
+
+<div class="portal">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="content"><div class="prose" id="content"><p class="loading">Loading…</p></div></main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@13/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var NAV = [
+    { grp: "Get started", items: [
+      ["00_overview.md", "Overview"],
+      ["03_installation_and_hello_world.md", "Install & hello world"],
+      ["04_basic_demo_how_to_use.md", "Basic demo"]
+    ]},
+    { grp: "Reference", items: [
+      ["01_arise_context.md", "ARISE context"],
+      ["02_interfaces.md", "Interfaces"],
+      ["architecture.md", "Architecture & flows"],
+      ["05_role_in_demonstrator.md", "Role in demonstrator"],
+      ["06_limitations.md", "Limitations"]
+    ]},
+    { grp: "Operate", items: [
+      ["INTERACT_FULL_ARISE.md", "Full ARISE interaction"]
+    ]}
+  ];
+
+  var KNOWN = {};
+  NAV.forEach(function (g) { g.items.forEach(function (it) { KNOWN[it[0]] = it[1]; }); });
+  var DEFAULT_DOC = "00_overview.md";
+
+  var contentEl = document.getElementById("content");
+  var sidebarEl = document.getElementById("sidebar");
+  var mermaidReady = false;
+
+  if (window.mermaid) {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#d6e9eb", primaryBorderColor: "#0e7c86", primaryTextColor: "#10212b",
+        lineColor: "#5b6b75", secondaryColor: "#eef2f4", tertiaryColor: "#f3f6f7",
+        fontFamily: "system-ui, sans-serif", fontSize: "14px"
+      }
+    });
+    mermaidReady = true;
+  }
+
+  // Build sidebar
+  NAV.forEach(function (g) {
+    var h = document.createElement("div"); h.className = "grp"; h.textContent = g.grp;
+    sidebarEl.appendChild(h);
+    g.items.forEach(function (it) {
+      var a = document.createElement("a");
+      a.href = "#" + it[0];
+      a.textContent = it[1];
+      a.dataset.doc = it[0];
+      sidebarEl.appendChild(a);
+    });
+  });
+
+  function basename(href) {
+    return href.split("#")[0].split("?")[0].split("/").pop();
+  }
+
+  function setActive(doc) {
+    var links = sidebarEl.querySelectorAll("a");
+    for (var i = 0; i < links.length; i++) {
+      links[i].classList.toggle("active", links[i].dataset.doc === doc);
+    }
+  }
+
+  // Turn ```mermaid code blocks into rendered diagrams
+  function renderMermaid() {
+    if (!mermaidReady) return;
+    var blocks = contentEl.querySelectorAll("pre > code.language-mermaid");
+    var nodes = [];
+    blocks.forEach(function (code) {
+      var div = document.createElement("div");
+      div.className = "mermaid";
+      div.textContent = code.textContent;
+      var pre = code.parentNode;
+      pre.parentNode.replaceChild(div, pre);
+      nodes.push(div);
+    });
+    if (nodes.length) {
+      try { mermaid.run({ nodes: nodes }); }
+      catch (e) { /* leave diagram source visible on failure */ }
+    }
+  }
+
+  // Rewrite intra-doc .md links into hash routes; open external links in a new tab
+  function fixLinks() {
+    var anchors = contentEl.querySelectorAll("a[href]");
+    anchors.forEach(function (a) {
+      var href = a.getAttribute("href");
+      if (/^https?:\/\//i.test(href)) {
+        a.target = "_blank"; a.rel = "noopener";
+        return;
+      }
+      if (/\.md(#|$)/i.test(href)) {
+        var b = basename(href);
+        if (KNOWN[b]) { a.setAttribute("href", "#" + b); }
+      }
+    });
+  }
+
+  function load(doc) {
+    if (!KNOWN[doc]) doc = DEFAULT_DOC;
+    setActive(doc);
+    contentEl.innerHTML = '<p class="loading">Loading…</p>';
+    fetch(doc, { cache: "no-cache" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function (md) {
+        contentEl.innerHTML = marked.parse(md, { gfm: true });
+        renderMermaid();
+        fixLinks();
+        document.title = KNOWN[doc] + " — ARISE Geofence docs";
+        window.scrollTo(0, 0);
+      })
+      .catch(function () {
+        contentEl.innerHTML = '<h1>Couldn’t load this page</h1><p class="loading">' +
+          'Open it directly on GitHub: <a href="https://github.com/SLAPStack/rises/tree/main/docs">docs/</a>.</p>';
+      });
+  }
+
+  function route() {
+    var doc = decodeURIComponent((location.hash || "").replace(/^#/, "")) || DEFAULT_DOC;
+    // accept full paths in the hash too (e.g. #docs/02_interfaces.md)
+    if (!KNOWN[doc]) { var b = basename(doc); if (KNOWN[b]) doc = b; }
+    load(doc);
+  }
+
+  window.addEventListener("hashchange", route);
+  route();
+})();
+</script>
+
+</body>
+</html>

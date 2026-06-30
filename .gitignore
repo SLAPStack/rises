@@ -1,0 +1,61 @@
+run_*.sh
+
+# Build artifacts (ROS2/colcon)
+build/
+install/
+log/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Generated documentation
+docs/doxygen/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+/claude-code-tweaks
+/.claude
+/slapstack-unity
+/AiTEN-Core
+/ai
+/ARISE_ROS_DDS_FIWARE.odp
+
+# Editor / tooling indices
+.vscode-ctags*
+
+# Runtime logs at repo root (each log file goes here, not under ./log/)
+/*.log
+
+# Documents directory PDFs (kept locally, not tracked in repo)
+documents/*.pdf
+
+# Large test-data / rosbag folders under resources/ — keep .rviz configs and
+# small fixture files tracked, but ignore the bulky bag and archive directories.
+/resources/rec__map_updates_and_travel_orders/
+/resources/unity_2speed_2agv_fixedlayout_clock/
+/resources/unity_2speed_2agv_fixedlayout_clock.zip
+/resources/discerning_safety_humble/
+/resources/discerning_safety_unity/
+/resources/lidar_test/
+/resources/rosbag2_2025_08_27-16_36_47/
+/resources/wepa/
+/resources/andros/
+/resources/arise_andros_moving_obstacles_20260505_223330/
+/resources/arise_andros_moving_obstacles_20260505_223330.tar.gz
+/geofence_current_bag/
+
+# Runtime KPI/log output from the orchestration harness
+/logs/
+
+# LibreOffice/editor lock files
+.~lock.*#
+backup/
+/resources/smoke_bag_andros_300s/

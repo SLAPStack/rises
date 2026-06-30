@@ -1,0 +1,26 @@
+# Build/runtime artifacts — never needed in the image context.
+.git
+build/
+install/
+log/
+
+# Python caches
+**/__pycache__/
+**/*.pyc
+
+# Sibling-repo symlinks that escape the build context (not part of the workspace build).
+AiTEN-Core
+slapstack-unity
+
+# AI tooling (symlinked, not project code).
+claude-code-tweaks
+.claude
+
+# Archives kept alongside resources.
+*.zip
+
+# Rosbags are multi-GB and are mounted at runtime, never baked into the image.
+# Without these, `COPY resources/` bloats the image with every recorded bag.
+**/*.db3
+geofence_current_bag/
+logs/

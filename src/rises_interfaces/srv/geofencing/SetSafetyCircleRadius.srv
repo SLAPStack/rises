@@ -1,0 +1,6 @@
+# Request
+float32 radius  # New safety circle radius in meters (must be > 0)
+---
+# Response
+bool success    # Whether the operation succeeded
+string message  # Status message

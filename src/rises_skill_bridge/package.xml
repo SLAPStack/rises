@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rises_skill_bridge</name>
+  <version>0.0.1</version>
+  <description>
+    Optional ARISE middleware integration node.
+    Exposes geofence services as ROS4HRI skill action servers.
+    Can be launched independently — core geofence system runs without this package.
+  </description>
+  <maintainer email="niklas.dietz@gmx.de">ndietz</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rises_interfaces</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_index_cpp</test_depend>
+  <test_depend>test_support</test_depend>
+  <test_depend>nlohmann_json</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <implements type="skill" package="geofence_skills" id="validate_path" />
+    <implements type="skill" package="geofence_skills" id="set_area_state" />
+    <implements type="skill" package="geofence_skills" id="get_area_state" />
+    <implements type="skill" package="geofence_skills" id="update_map" />
+    <implements type="skill" package="geofence_skills" id="update_warehouse_layout" />
+    <implements type="skill" package="geofence_skills" id="set_safety_radius" />
+    <implements type="skill" package="geofence_skills" id="get_safety_radius" />
+    <implements type="skill" package="geofence_skills" id="get_map_info" />
+    <implements type="skill" package="geofence_skills" id="set_geofence_enabled" />
+  </export>
+</package>

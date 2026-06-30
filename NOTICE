@@ -1,0 +1,36 @@
+ARISE Reusable HRI Modules (RISES experiment, ARISE Open Call 1)
+Copyright 2026 SLAPStack GmbH
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes / depends on the following third-party components, each under its
+own license. These dependencies are not redistributed here unless noted; they
+are obtained at build time. Their licenses govern their own code.
+
+Build / runtime libraries:
+  - Eigen3                         MPL-2.0        (file-level copyleft; used unmodified)
+  - nanoflann                      BSD-2-Clause
+  - Boost                          BSL-1.0
+  - nlohmann/json                  MIT
+  - userspace-rcu (liburcu)        LGPL-2.1       (linked as a system shared library)
+  - xsimd                          BSD-3-Clause   (optional / test only)
+
+Middleware / runtime (Apache-2.0):
+  - ROS 2 Jazzy
+  - eProsima Vulcanexus
+  - eProsima Fast DDS
+  - eProsima FIWARE DDS-Enabler
+
+FIWARE services, used as separate processes / containers (not linked):
+  - FIWARE Orion-LD               AGPL-3.0
+  - FIWARE Mintaka                AGPL-3.0
+
+The Orion-LD and Mintaka services communicate with this software over the
+network (NGSI-LD / HTTP) as independent programs; they are not statically or
+dynamically linked into, and form no combined work with, the Apache-2.0 code
+in this repository.
+
+ROS4HRI alignment note: the optional rises_leg_filter publishes on the
+ROS4HRI /humans/bodies/ namespace using std_msgs/String as a placeholder for
+hri_msgs/IdsList (hri_msgs is not vendored in this workspace). See
+docs/02_interfaces.md.

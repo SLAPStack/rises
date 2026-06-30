@@ -1,0 +1,231 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: RISES Geofence Alerts
+    folder: RISES
+    interval: 60s
+    rules:
+      # Alert 1: High obstacle alert frequency
+      # Fires when more than 20 obstacle alerts occur in a 5-minute window
+      - uid: rises-high-alert-frequency
+        title: High Obstacle Alert Frequency
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  time_bucket('5 minutes', ts) AS time,
+                  COUNT(*) as alert_count
+                FROM attributes
+                WHERE id LIKE '%obstacle_alert'
+                  AND boolean = true
+                  AND ts > now() - interval '5 minutes'
+                GROUP BY time
+                ORDER BY time
+              format: time_series
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: ""
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 20
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Obstacle alert frequency exceeds 20 alerts in 5 minutes. Possible sensor issue or unusual activity in the warehouse."
+        labels:
+          severity: warning
+          component: geofence
+
+      # Alert 2: Geofence node stale (no data for >30 seconds)
+      # Fires when no obstacle_report updates have been received recently
+      - uid: rises-geofence-stale
+        title: Geofence Node Stale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  now() AS time,
+                  EXTRACT(EPOCH FROM (now() - MAX(ts))) as age_seconds
+                FROM attributes
+                WHERE id LIKE '%obstacle_report'
+              format: table
+          - refId: B
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: ""
+          - refId: C
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 30
+        noDataState: Alerting
+        execErrState: Error
+        for: 30s
+        annotations:
+          summary: "Geofence node has not reported data for over 30 seconds. The node may be down or disconnected."
+        labels:
+          severity: critical
+          component: geofence
+
+      # Alert 3: Sustained obstacle alert (obstacle present for >60 seconds)
+      # Fires when obstacle_alert stays true for more than 1 minute continuously
+      - uid: rises-sustained-obstacle
+        title: Sustained Obstacle Alert
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  now() AS time,
+                  CASE
+                    WHEN bool_and(boolean) THEN
+                      EXTRACT(EPOCH FROM (now() - MIN(ts)))
+                    ELSE 0
+                  END as sustained_seconds
+                FROM attributes
+                WHERE id LIKE '%obstacle_alert'
+                  AND ts > now() - interval '2 minutes'
+              format: table
+          - refId: B
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: ""
+          - refId: C
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 60
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Obstacle alert has been active continuously for over 60 seconds. A persistent unknown obstacle may require operator attention."
+        labels:
+          severity: warning
+          component: safety
+
+      # Alert 4: Node diagnostics error
+      # Fires when a monitored node reports ERROR level diagnostics
+      - uid: rises-node-error
+        title: Node Diagnostics Error
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  now() AS time,
+                  MAX(
+                    CASE WHEN compound IS NOT NULL THEN
+                      (SELECT MAX(COALESCE((v->>'level')::int, 0))
+                       FROM jsonb_each(compound) AS t(k, v)
+                       WHERE v ? 'level')
+                    ELSE 0 END
+                  ) as max_error_level
+                FROM attributes
+                WHERE id LIKE '%diagnostics'
+                  AND ts > now() - interval '1 minute'
+              format: table
+          - refId: B
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: ""
+          - refId: C
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 1
+        noDataState: OK
+        execErrState: Error
+        for: 30s
+        annotations:
+          summary: "A monitored ROS 2 node is reporting ERROR-level diagnostics. Check system health."
+        labels:
+          severity: critical
+          component: system

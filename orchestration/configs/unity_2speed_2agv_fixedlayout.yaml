@@ -1,0 +1,169 @@
+# ===============================================================================
+# Configuration for unity_2speed_2agv_fixedlayout bagfile
+# ===============================================================================
+#
+# Bagfile Info:
+#   Path: <your-bagfiles-dir>/unity_2speed_2agv_fixedlayout/
+#   Duration: 217.96s
+#   AGV Namespace IDs: 0, 1 (creates agv_0, agv_1)
+#
+# Bagfile Topics (with idX notation):
+#   - /mqtt/agv/id0/order, /mqtt/agv/id1/order
+#   - /mqtt/agv/id0/laserscan, /mqtt/agv/id1/laserscan
+#   - /mqtt/agv/tf (shared)
+#   - /mqtt/discerning_safety_map, /mqtt/warehouse_contours
+#   - /validation/obstacle_spawn, /validation/obstacle_alarm
+#
+# Topic Remapping (handled by central container):
+#   /mqtt/agv/id0/order      -> /agv_0/order
+#   /mqtt/agv/id1/order      -> /agv_1/order
+#   /mqtt/agv/id0/laserscan  -> /agv_0/scan_0
+#   /mqtt/agv/id1/laserscan  -> /agv_1/scan_0
+# ===============================================================================
+
+mode: central
+
+# AGV namespaces - full namespace names
+agv_namespaces:
+  - agv_0
+  - agv_1
+
+# AGV-specific scan topic remapping (for bagfile playback)
+# Maps: namespace -> actual topic in bagfile
+agv_scan_topic_remaps:
+  agv_0: "/mqtt/agv/id0/laserscan"
+  agv_1: "/mqtt/agv/id1/laserscan"
+
+ros_domain_id: 0
+startup_delay: 2.0
+health_check_interval: 5.0
+max_startup_retries: 3
+
+# ===============================================================================
+# Docker Settings
+# ===============================================================================
+docker:
+  network_mode: "host"
+  restart_policy: "unless-stopped"
+  remove_on_exit: false
+  privileged: true
+  log_driver: "json-file"
+  log_max_size: "10m"
+  log_max_file: 3
+
+# ===============================================================================
+# Central Bridge Container
+# ===============================================================================
+# Handles map update translation and rosbag playback
+central:
+  image: "rises:central"
+  dockerfile: "central.dockerfile"
+  container_name: "central_bridge"
+
+  # Map update buffering
+  enable_buffering: true
+  buffer_timeout: 1.0
+  replay_rate: 33.0
+
+  # Frames
+  target_frame: "map"
+  base_link_pub_rate: 20.0
+
+  # Timing
+  use_sim_time: true
+
+  # Visualization
+  launch_rviz: true
+  rviz_namespace: "agv_0"
+
+  # Rosbag settings
+  play_rosbag: true
+  bag_file: "<your-bagfiles-dir>/unity_2speed_2agv_fixedlayout"
+  rosbag_rate: 1.0
+  rosbag_loop: true
+  rosbag_delay: 5.0
+  storage: "sqlite3"
+
+  # Topic remappings for this bagfile
+  # Note: Scan topics are now remapped on the subscriber side via agv_scan_topic_remaps
+  # Only remap order topics here; unused topics suppressed via suppressed_bagfile_topics
+  rosbag_remaps: "/mqtt/agv/id0/order:=/agv_0/order,/mqtt/agv/id1/order:=/agv_1/order,/mqtt/agv/tf:=/tf"
+
+  # Geofence ready waiting (disable for faster startup)
+  wait_for_geofence_ready: false
+  geofence_ready_timeout: 5.0
+
+# ===============================================================================
+# AGV Container Settings (applied to all AGVs)
+# ===============================================================================
+agv:
+  image: "rises:base"
+  dockerfile: "central.dockerfile"
+  container_prefix: "agv"
+
+  # --- Geofence Settings ---
+  enable_safety_circle: true
+  safety_circle_radius: 5.0
+  visualizer_enabled: true
+  use_namespace_for_map_frame: false
+  target_frame: "map"
+  base_link_frame: "base_link"
+
+  # --- Robot Filtering (multi-robot support) ---
+  # Disabled for 2 AGVs - enable if robots detect each other as obstacles
+  enable_robot_filtering: false
+  robot_footprint_type: "circle"
+  robot_footprint_radius: 0.5
+  robot_footprint_margin: 0.1
+
+  # --- Laserscan Preprocessor Settings ---
+  dynamic_laser_detection: false
+  # NOTE: laser_frame_ids is NOT specified here - uses C++ node default ["laser_link"]
+  # This avoids JSON string/array type conversion issues
+  segment_distance_threshold: 0.2
+  segment_angle_threshold_deg: 30.0
+
+  # --- Static TF Publisher ---
+  # Publish static transform from base_link to lidar frame
+  publish_static_tf: true
+  static_tf_parent_frame: "base_link"
+  static_tf_child_frame: "lidar"
+  static_tf_x: 0.0
+  static_tf_y: 0.0
+  static_tf_z: 0.0
+  static_tf_roll: 1.5708  # 90° clockwise around X-axis (makes scan horizontal)
+  static_tf_pitch: 0.0
+  static_tf_yaw: 0.0
+  static_tf_use_namespace: true  # Prefix frames with agv_X (agv_X_base_link -> agv_X_lidar)
+
+  # --- Map Update Translator ---
+  translator_enabled: true
+  use_service_for_map_updates: true
+
+  # Grid-map node (disabled – using spatial geofence node)
+  gridmap_enabled: false
+
+  # --- Validation Node ---
+  # Enable for this scenario (bag has /validation/obstacle_spawn + obstacle_alarm)
+  validation_enabled: true
+  validation_output_file: "/workspace/validation_results.csv"
+
+  # --- Obstacle Report (VDA5050) ---
+  # true = report all obstacles every scan, false = only report unmatched
+  publish_report_always: false
+
+  # Timing
+  # Scenario: selects params_rosbag.yaml in the entrypoint
+  # (rosbag data is already in ROS frame, needs use_sim_time=true)
+  scenario: "rosbag"
+
+  use_sim_time: true
+
+  # Logging
+  log_level: "debug"  # debug, info, warn, error, fatal
+
+  # --- No JSON pre-initialization ---
+  obstacles_json_file: ""
+  contours_json_file: ""
+  publish_ready_signal: false
+  json_suppress_topics: []

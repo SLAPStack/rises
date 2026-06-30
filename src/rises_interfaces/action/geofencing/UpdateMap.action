@@ -1,0 +1,12 @@
+# Goal
+ObstacleUpdateArray updates
+---
+# Result
+bool success
+string message
+int32 obstacles_added
+int32 obstacles_removed
+---
+# Feedback
+string status
+float32 progress

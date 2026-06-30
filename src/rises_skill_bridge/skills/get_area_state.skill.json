@@ -1,0 +1,52 @@
+{
+  "id": "get_area_state",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/GetAreaState",
+  "default_path": "/skill/get_area_state",
+  "description": "Queries whether a specific area in the warehouse geofence map is currently locked. Used to check zone availability before entering.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "area_id",
+        "type": "int64",
+        "description": "Identifier of the area to query",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "locked",
+        "type": "bool",
+        "description": "True if the area is currently locked"
+      },
+      {
+        "name": "found",
+        "type": "bool",
+        "description": "True if the area exists in the geofence map"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Additional information"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current query status"
+      }
+    ]
+  }
+}

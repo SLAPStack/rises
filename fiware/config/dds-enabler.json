@@ -1,0 +1,64 @@
+{
+  "dds": {
+    "ddsmodule": {
+      "dds": {
+        "domain": 0,
+        "transport": "udp"
+      }
+    },
+    "ngsild": {
+      "topics": {
+        "rt/agv_0/fiware/obstacle_summary": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "obstacle_summary"
+        },
+        "rt/agv_0/fiware/obstacle_alert": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "obstacle_alert"
+        },
+        "rt/agv_0/fiware/geofence_ready": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "geofence_ready"
+        },
+        "rt/agv_0/fiware/warehouse_geometry": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "warehouse_geometry"
+        },
+        "rt/agv_0/fiware/robot_position": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "robot_position"
+        },
+        "rt/agv_0/fiware/system_health": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "system_health"
+        },
+        "rt/agv_0/fiware/heatmap_summary": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "heatmap_summary"
+        },
+        "rt/agv_0/fiware/map_obstacles": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "map_obstacles"
+        },
+        "rt/agv_0/fiware/obstacle_segments": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "obstacle_segments"
+        },
+        "rt/agv_0/fiware/validation_result": {
+          "entityType": "AGV",
+          "entityId": "urn:ngsi-ld:AGV:agv_0",
+          "attribute": "validation_result"
+        }
+      }
+    }
+  }
+}

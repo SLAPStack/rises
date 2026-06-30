@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Fast-DDS profiles enabling XTypes TypeObject propagation.
+  Used by BOTH the AGV container and the DDS Enabler so they exchange type info.
+-->
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+    <profiles>
+        <participant profile_name="participant_xtypes" is_default_profile="true">
+            <rtps>
+                <builtin>
+                    <typelookup_config>
+                        <use_client>true</use_client>
+                        <use_server>true</use_server>
+                    </typelookup_config>
+                </builtin>
+            </rtps>
+        </participant>
+    </profiles>
+</dds>

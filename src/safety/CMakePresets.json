@@ -1,0 +1,52 @@
+{
+  "version": 3,
+
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
+        "BUILD_TESTING": "OFF"
+      }
+    },
+
+    {
+      "name": "dev",
+      "displayName": "Safety – Development",
+      "inherits": "base",
+
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+
+    {
+      "name": "release",
+      "displayName": "Safety – Release / CI",
+      "inherits": "base",
+
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    }
+  ]
+}

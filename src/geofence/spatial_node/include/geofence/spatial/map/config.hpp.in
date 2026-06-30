@@ -1,0 +1,43 @@
+#pragma once
+
+/**
+ * @file config.hpp
+ * @brief Compile-time configuration for geofence system
+ * 
+ * This file is generated from config.hpp.in by CMake during build configuration.
+ * Values are set via CMake command-line arguments:
+ * 
+ * Example:
+ *   colcon build --symlink-install --cmake-args -DDYNAMIC_OBSTACLE_CAPACITY=256
+ * 
+ * Default values are used if not specified.
+ */
+
+#include <cstddef>
+
+namespace rises {
+namespace geofence {
+
+/**
+ * @brief Maximum number of dynamic obstacles in the dynamic obstacle layer
+ * 
+ * This value is configured at compile-time via CMake and determines the
+ * fixed capacity of the lock-free circular buffer used for time-limited
+ * dynamic obstacles.
+ * 
+ * Considerations for choosing capacity:
+ * - Higher values: More dynamic obstacles, higher memory usage, longer linear scans
+ * - Lower values: Less memory, faster queries, may reject new obstacles when full
+ * - Typical range: 32-256 obstacles
+ * - Default: 128 obstacles
+ * 
+ * Memory footprint per obstacle: ~128 bytes (geometry variant + metadata)
+ * Total memory: DYNAMIC_OBSTACLE_CAPACITY × 128 bytes × 2 (RCU double buffering)
+ * 
+ * @note Query complexity: O(N) where N = DYNAMIC_OBSTACLE_CAPACITY
+ * @note Linear scan acceptable for N ≤ 256 on modern CPUs (~10-50 μs)
+ */
+constexpr std::size_t DYNAMIC_OBSTACLE_CAPACITY = @DYNAMIC_OBSTACLE_CAPACITY@;
+
+} // namespace geofence
+} // namespace rises

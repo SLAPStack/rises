@@ -1,0 +1,10 @@
+# Goal
+---
+# Result
+int32 obstacle_count
+bool contours_loaded
+int32 contour_segment_count
+int32 inner_polygon_count
+---
+# Feedback
+string status

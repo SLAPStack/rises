@@ -1,0 +1,51 @@
+{
+  "id": "get_map_info",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/GetMapInfo",
+  "default_path": "/skill/get_map_info",
+  "description": "Queries the current state of the geofence map: obstacle count, whether warehouse contours are loaded, and contour geometry counts. Used as a health check before navigation.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "obstacle_count",
+        "type": "int32",
+        "description": "Number of obstacles currently in the spatial index"
+      },
+      {
+        "name": "contours_loaded",
+        "type": "bool",
+        "description": "True if warehouse boundary contours have been loaded"
+      },
+      {
+        "name": "contour_segment_count",
+        "type": "int32",
+        "description": "Number of outer wall line segments"
+      },
+      {
+        "name": "inner_polygon_count",
+        "type": "int32",
+        "description": "Number of inner contour polygons (pillars, shelves)"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current query status"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1243 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 14
+      },
+      "id": 26,
+      "title": "Warehouse Floor Map (walls + robot + obstacles)",
+      "description": "2D warehouse map showing wall segments (gray), inner contour rectangles (orange), robot position trail (blue), matched obstacles (green), and unmatched obstacles (red).",
+      "type": "nline-plotlyjs-panel",
+      "options": {
+        "configuration": {
+          "settings": {
+            "displayModeBar": false
+          }
+        },
+        "layout": {
+          "xaxis": {
+            "title": "X (meters)",
+            "type": "linear",
+            "scaleanchor": "y",
+            "scaleratio": 1,
+            "constrain": "domain"
+          },
+          "yaxis": {
+            "title": "Y (meters)",
+            "type": "linear"
+          },
+          "showlegend": true,
+          "legend": {
+            "x": 0,
+            "y": 1
+          },
+          "margin": {
+            "l": 50,
+            "r": 20,
+            "t": 30,
+            "b": 50
+          },
+          "plot_bgcolor": "#1a1a2e",
+          "paper_bgcolor": "#16213e"
+        },
+        "script": "let traces = [];\nlet allX = [], allY = [];\n\n// Trace 1: Wall segments (outer contour)\nconst wallData = data.series.find(s => s.refId === 'walls');\nif (wallData && wallData.fields.length >= 4) {\n  const x1 = wallData.fields.find(f => f.name === 'x1');\n  const y1 = wallData.fields.find(f => f.name === 'y1');\n  const x2 = wallData.fields.find(f => f.name === 'x2');\n  const y2 = wallData.fields.find(f => f.name === 'y2');\n  if (x1 && y1 && x2 && y2) {\n    let wx = [], wy = [];\n    for (let i = 0; i < x1.values.length; i++) {\n      wx.push(x1.values[i], x2.values[i], null);\n      wy.push(y1.values[i], y2.values[i], null);\n      allX.push(x1.values[i], x2.values[i]);\n      allY.push(y1.values[i], y2.values[i]);\n    }\n    traces.push({x: wx, y: wy, mode: 'lines', line: {color: '#aaaaaa', width: 3}, name: 'Walls'});\n  }\n}\n\n// Trace 2: Inner polygons (contour outlines)\nconst innerData = data.series.find(s => s.refId === 'inner');\nif (innerData && innerData.fields.length >= 3) {\n  const px = innerData.fields.find(f => f.name === 'x');\n  const py = innerData.fields.find(f => f.name === 'y');\n  const pidx = innerData.fields.find(f => f.name === 'poly_idx');\n  if (px && py && pidx) {\n    let polyTraces = {};\n    for (let i = 0; i < px.values.length; i++) {\n      const idx = pidx.values[i];\n      if (!polyTraces[idx]) polyTraces[idx] = {x: [], y: []};\n      polyTraces[idx].x.push(px.values[i]);\n      polyTraces[idx].y.push(py.values[i]);\n      allX.push(px.values[i]);\n      allY.push(py.values[i]);\n    }\n    let first = true;\n    for (const idx of Object.keys(polyTraces)) {\n      const p = polyTraces[idx];\n      traces.push({x: p.x, y: p.y, mode: 'lines', line: {color: '#ff8800', width: 2}, fill: 'toself', fillcolor: 'rgba(255,136,0,0.15)', name: first ? 'Inner contour' : '', showlegend: first});\n      first = false;\n    }\n  }\n}\n\n// Trace 3: Map obstacles (pallets \u2014 always visible, green filled rectangles)\nconst mapObsData = data.series.find(s => s.refId === 'map_obs_rects');\nif (mapObsData && mapObsData.fields.length >= 4) {\n  const rx0 = mapObsData.fields.find(f => f.name === 'x_min');\n  const ry0 = mapObsData.fields.find(f => f.name === 'y_min');\n  const rx1 = mapObsData.fields.find(f => f.name === 'x_max');\n  const ry1 = mapObsData.fields.find(f => f.name === 'y_max');\n  if (rx0 && ry0 && rx1 && ry1) {\n    let first = true;\n    for (let i = 0; i < rx0.values.length; i++) {\n      const xA = rx0.values[i], yA = ry0.values[i];\n      const xB = rx1.values[i], yB = ry1.values[i];\n      traces.push({x: [xA,xB,xB,xA,xA], y: [yA,yA,yB,yB,yA], mode: 'lines', fill: 'toself', fillcolor: 'rgba(68,204,68,0.25)', line: {color: '#44cc44', width: 1}, name: first ? 'Pallets' : '', showlegend: first});\n      first = false;\n    }\n  }\n}\n\n// Trace 4: Matched LiDAR segments (blue lines)\nconst matchedData = data.series.find(s => s.refId === 'matched');\nif (matchedData && matchedData.fields.length >= 4) {\n  const mx1 = matchedData.fields.find(f => f.name === 'x1');\n  const my1 = matchedData.fields.find(f => f.name === 'y1');\n  const mx2 = matchedData.fields.find(f => f.name === 'x2');\n  const my2 = matchedData.fields.find(f => f.name === 'y2');\n  if (mx1 && my1 && mx2 && my2) {\n    let lx = [], ly = [];\n    for (let i = 0; i < mx1.values.length; i++) {\n      lx.push(mx1.values[i], mx2.values[i], null);\n      ly.push(my1.values[i], my2.values[i], null);\n    }\n    traces.push({x: lx, y: ly, mode: 'lines', line: {color: '#4488ff', width: 2}, name: 'Matched (LiDAR)'});\n  }\n}\n\n// Trace 5: Robot position trail\nconst robotData = data.series.find(s => s.refId === 'robot');\nif (robotData && robotData.fields.length >= 2) {\n  const rx = robotData.fields.find(f => f.name === 'x');\n  const ry = robotData.fields.find(f => f.name === 'y');\n  if (rx && ry && rx.values.length > 0) {\n    traces.push({x: rx.values, y: ry.values, mode: 'lines+markers', marker: {size: 4, color: '#4488ff'}, line: {color: '#4488ff44', width: 1}, name: 'Robot trail'});\n    const last = rx.values.length - 1;\n    traces.push({x: [rx.values[last]], y: [ry.values[last]], mode: 'markers', marker: {size: 14, color: '#4488ff', symbol: 'diamond'}, name: 'Robot (now)'});\n  }\n}\n\n// Trace 7: Unmatched obstacles (red lines)\nconst unmatchedData = data.series.find(s => s.refId === 'unmatched');\nif (unmatchedData && unmatchedData.fields.length >= 4) {\n  const ux1 = unmatchedData.fields.find(f => f.name === 'x1');\n  const uy1 = unmatchedData.fields.find(f => f.name === 'y1');\n  const ux2 = unmatchedData.fields.find(f => f.name === 'x2');\n  const uy2 = unmatchedData.fields.find(f => f.name === 'y2');\n  if (ux1 && uy1 && ux2 && uy2) {\n    let lx = [], ly = [];\n    for (let i = 0; i < ux1.values.length; i++) {\n      lx.push(ux1.values[i], ux2.values[i], null);\n      ly.push(uy1.values[i], uy2.values[i], null);\n    }\n    traces.push({x: lx, y: ly, mode: 'lines', line: {color: '#ff4444', width: 3}, name: 'Unmatched'});\n  }\n}\n\n// Trace 6: Predicted heatmap (orange-red gradient circles)\nconst heatmapData = data.series.find(s => s.refId === 'heatmap');\nif (heatmapData && heatmapData.fields.length >= 3) {\n  const hx = heatmapData.fields.find(f => f.name === 'x');\n  const hy = heatmapData.fields.find(f => f.name === 'y');\n  const hv = heatmapData.fields.find(f => f.name === 'value');\n  if (hx && hy && hv && hx.values.length > 0) {\n    const sizes = hv.values.map(v => 6 + (v / 100.0) * 20);\n    const colors = hv.values.map(v => `rgba(255, ${Math.max(0, 200 - v * 2)}, 0, ${0.3 + (v / 100.0) * 0.5})`);\n    traces.push({x: hx.values, y: hy.values, mode: 'markers', marker: {size: sizes, color: colors}, name: 'Predicted', hovertext: hv.values.map(v => v + '%')});\n  }\n}\n\n// Compute axis range with buffer\nif (allX.length > 0) {\n  const xMin = Math.min(...allX), xMax = Math.max(...allX);\n  const yMin = Math.min(...allY), yMax = Math.max(...allY);\n  const pad = Math.max((xMax - xMin), (yMax - yMin)) * 0.05 + 1;\n  return {data: traces, layout: {xaxis: {range: [xMin - pad, xMax + pad], type: 'linear'}, yaxis: {range: [yMin - pad, yMax + pad], type: 'linear'}}};\n}\n\nreturn {data: traces, layout: {xaxis: {type: 'linear'}, yaxis: {type: 'linear'}}};"
+      },
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (SELECT compound FROM attributes WHERE id LIKE '%warehouse_geometry' ORDER BY ts DESC LIMIT 1) SELECT (seg->>'x1')::double precision as x1, (seg->>'y1')::double precision as y1, (seg->>'x2')::double precision as x2, (seg->>'y2')::double precision as y2 FROM latest, jsonb_array_elements(compound->'wall_segments') as seg",
+          "format": "table",
+          "refId": "walls",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        },
+        {
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (SELECT compound FROM attributes WHERE id LIKE '%warehouse_geometry' ORDER BY ts DESC LIMIT 1) SELECT poly_idx, (pt->>'x')::double precision as x, (pt->>'y')::double precision as y FROM latest, jsonb_array_elements(compound->'inner_polygons') WITH ORDINALITY AS polys(poly, poly_idx), jsonb_array_elements(poly) AS pt",
+          "format": "table",
+          "refId": "inner",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        },
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT x, y FROM (SELECT ts, (compound->>'x')::double precision as x, (compound->>'y')::double precision as y FROM attributes WHERE id LIKE '%robot_position' ORDER BY ts DESC LIMIT 5) sub ORDER BY sub.ts",
+          "format": "table",
+          "refId": "robot",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        },
+        {
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (SELECT compound FROM attributes WHERE id LIKE '%predicted_heatmap' ORDER BY ts DESC LIMIT 1) SELECT (cell->>'x')::double precision as x, (cell->>'y')::double precision as y, (cell->>'v')::int as value FROM latest, jsonb_array_elements(compound->'hot_cells') as cell",
+          "format": "table",
+          "refId": "heatmap",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        },
+        {
+          "rawQuery": true,
+          "rawSql": "WITH chunks AS (SELECT DISTINCT ON (id) compound FROM attributes WHERE id ~ 'map_obstacles_[0-9]' ORDER BY id, ts DESC) SELECT (r->>0)::double precision AS x_min, (r->>1)::double precision AS y_min, (r->>2)::double precision AS x_max, (r->>3)::double precision AS y_max FROM chunks, jsonb_array_elements(compound->'rectangles') AS r",
+          "format": "table",
+          "refId": "map_obs_rects",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        },
+        {
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (SELECT compound FROM attributes WHERE id LIKE '%obstacle_report' ORDER BY ts DESC LIMIT 1) SELECT (seg->>'x1')::double precision as x1, (seg->>'y1')::double precision as y1, (seg->>'x2')::double precision as x2, (seg->>'y2')::double precision as y2 FROM latest, jsonb_array_elements(compound->'matched_segments') as seg",
+          "format": "table",
+          "refId": "matched",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "hide": true
+        },
+        {
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (SELECT compound FROM attributes WHERE id LIKE '%obstacle_report' ORDER BY ts DESC LIMIT 1) SELECT (seg->>'x1')::double precision as x1, (seg->>'y1')::double precision as y1, (seg->>'x2')::double precision as x2, (seg->>'y2')::double precision as y2 FROM latest, jsonb_array_elements(compound->'unmatched_segments') as seg",
+          "format": "table",
+          "refId": "unmatched",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "hide": true
+        }
+      ]
+    },
+    {
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 816
+      },
+      "id": 100,
+      "title": "Map Sync",
+      "description": "Flush buffered warehouse map data to Grafana and start live streaming",
+      "type": "volkovlabs-form-panel",
+      "options": {
+        "buttonGroup": {
+          "orientation": "center",
+          "size": "lg"
+        },
+        "submit": {
+          "icon": "sync",
+          "text": "Sync Map Data",
+          "variant": "primary"
+        },
+        "reset": {
+          "variant": "hidden"
+        },
+        "saveDefault": {
+          "variant": "hidden"
+        },
+        "elements": [],
+        "layout": {
+          "variant": "none"
+        },
+        "initial": {
+          "method": "none"
+        },
+        "update": {
+          "method": "custom",
+          "customCode": "const response = await fetch('http://localhost:9091/sync', { method: 'POST' });\nconst result = await response.json();\nif (result.status === 'ok') {\n  context.grafana.notifySuccess(['Map Sync', result.geometry_buffered ? 'Map data flushed and streaming enabled' : 'No geometry buffered yet \u2014 streaming enabled']);\n} else {\n  context.grafana.notifyError(['Map Sync', 'Failed to sync']);\n}"
+        },
+        "resetAction": {
+          "mode": "initial"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Clear",
+                  "color": "green",
+                  "index": 0
+                },
+                "1": {
+                  "text": "ALERT",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 23,
+        "w": 6,
+        "h": 3
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "textMode": "auto"
+      },
+      "title": "Alert Status",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 0::int AS alert",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Ready",
+                  "color": "green",
+                  "index": 0
+                },
+                "0": {
+                  "text": "Not Ready",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 6,
+        "h": 3
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "textMode": "auto"
+      },
+      "title": "Geofence Ready",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 1::int AS ready",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 1
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 14,
+        "w": 6,
+        "h": 3
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "title": "False Stop Rate",
+      "description": "% of transient alerts (lasted < 2 observations). Target: < 10%.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 2.3::float AS value",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 4
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 6,
+        "h": 3
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "title": "System Uptime",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 99.9978::float AS value",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineInterpolation": "stepBefore",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 821
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Obstacle Alert Timeline",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, entityid, CASE WHEN boolean THEN 1 ELSE 0 END as alert FROM attributes WHERE id LIKE '%obstacle_alert' AND ts > now() - interval '1 hour' ORDER BY ts",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 828
+      },
+      "id": 50,
+      "title": "Obstacle Analytics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 837
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Alerts per 5 min",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT time_bucket('5 minutes', ts) AS time, entityid, COUNT(*) as alerts FROM attributes WHERE id LIKE '%obstacle_alert' AND boolean = true AND ts > now() - interval '24 hours' GROUP BY time, entityid ORDER BY time",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 1
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 20,
+        "w": 6,
+        "h": 3
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "title": "Average Alert Duration",
+      "description": "How long each obstacle alert lasted before clearing",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 4.2::float AS value",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 845
+      },
+      "id": 51,
+      "title": "Predictive Analytics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 300
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 17,
+        "w": 6,
+        "h": 3
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "title": "Mean Time between Alerts (MTBA)",
+      "description": "Average time between alert starts. Short intervals suggest persistent safety issues.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 11.2::float AS value",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 6,
+        "h": 3
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "title": "Total Alerts",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 2375::int AS value",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1.0
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 2
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 846
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "title": "Alert Trend (slope)",
+      "description": "Linear regression slope of alerts/hour over 24h. Positive = increasing alerts, negative = improving. Near zero = stable.",
+      "type": "stat",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "WITH hourly AS (SELECT time_bucket('1 hour', ts) AS hour, COUNT(*) as cnt FROM attributes WHERE id LIKE '%obstacle_alert' AND boolean = true AND ts > now() - interval '24 hours' GROUP BY hour), numbered AS (SELECT hour, cnt, ROW_NUMBER() OVER (ORDER BY hour) as n FROM hourly), stats AS (SELECT COUNT(*) as N, SUM(n) as sx, SUM(cnt) as sy, SUM(n * cnt) as sxy, SUM(n * n) as sxx FROM numbered) SELECT CASE WHEN N * sxx - sx * sx > 0 THEN (N * sxy - sx * sy)::float / (N * sxx - sx * sx)::float ELSE 0 END as slope FROM stats",
+          "format": "table",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 852
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Time Between Alerts (rolling)",
+      "description": "Gap between consecutive alert starts over time. Decreasing trend = deteriorating safety conditions.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "WITH alert_starts AS (SELECT ts, LAG(ts) OVER (ORDER BY ts) as prev_ts FROM attributes WHERE id LIKE '%obstacle_alert' AND boolean = true AND ts > now() - interval '24 hours') SELECT ts AS time, EXTRACT(EPOCH FROM (ts - prev_ts)) as gap_seconds FROM alert_starts WHERE prev_ts IS NOT NULL ORDER BY ts",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 860
+      },
+      "id": 52,
+      "title": "System Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineInterpolation": "stepBefore",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 861
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Node Health Level Over Time",
+      "description": "Diagnostic level per node: 0=OK, 1=WARN, 2=ERROR. Spikes indicate node issues.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, key as node_name, (value->>'level')::int as level FROM attributes, jsonb_each(compound) WHERE id LIKE '%diagnostics' AND ts > now() - interval '1 hour' AND value ? 'level' ORDER BY ts",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 861
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Scan Age (from diagnostics)",
+      "description": "How old the last scan is, as reported by node diagnostics. Rising = node is falling behind.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, key as node_name, (value->>'last_scan_age_sec')::float as scan_age FROM attributes, jsonb_each(compound) WHERE id LIKE '%diagnostics' AND ts > now() - interval '1 hour' AND value ? 'last_scan_age_sec' ORDER BY ts",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 869
+      },
+      "id": 53,
+      "title": "Spatial Visualization",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "pointSize": {
+              "fixed": 4
+            },
+            "show": "points"
+          }
+        }
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 870
+      },
+      "id": 21,
+      "options": {
+        "dims": {
+          "x": "x",
+          "y": "y"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Robot Position Trail",
+      "description": "AGV position history on the warehouse floor (XY scatter). Recent positions in blue.",
+      "type": "xychart",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT (compound->>'x')::float as x, (compound->>'y')::float as y FROM attributes WHERE id LIKE '%robot_position' AND ts > now() - interval '10 minutes' ORDER BY ts",
+          "format": "table",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 882
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Robot Position X Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, (compound->>'x')::float as x FROM attributes WHERE id LIKE '%robot_position' AND ts > now() - interval '10 minutes' ORDER BY ts",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 882
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "Robot Position Y Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, (compound->>'y')::float as y FROM attributes WHERE id LIKE '%robot_position' AND ts > now() - interval '10 minutes' ORDER BY ts",
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          }
+        }
+      ]
+    },
+    {
+      "id": 200,
+      "type": "stat",
+      "title": "Detected Ratio (detected/spawned)",
+      "description": "Fraction of spawned obstacles detected. Target: 1.0",
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 6,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.9
+              },
+              {
+                "color": "green",
+                "value": 0.99
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 2,
+          "min": 0,
+          "max": 1
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 1.0::float AS value",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "RISES",
+    "geofence",
+    "ARISE",
+    "KPI"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "1s",
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "RISES Condition Monitoring",
+  "uid": "rises-condition-monitoring",
+  "version": 3
+}

@@ -1,0 +1,11 @@
+# Goal
+Contours contours
+---
+# Result
+bool success
+string message
+int32 segments_count
+int32 inner_polygons_count
+---
+# Feedback
+string status

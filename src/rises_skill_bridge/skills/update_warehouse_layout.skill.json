@@ -1,0 +1,57 @@
+{
+  "id": "update_warehouse_layout",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/UpdateWarehouseLayout",
+  "default_path": "/skill/update_warehouse_layout",
+  "description": "Replaces the warehouse boundary definition (outer walls, inner contour polygons) in the geofence. Used when the warehouse layout changes, e.g. after reconfiguration via SLAPStack/FIWARE.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "contours",
+        "type": "rises_interfaces/Contours",
+        "description": "New warehouse boundary definition (outer segments, hull, inner polygons)",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "success",
+        "type": "bool",
+        "description": "True if the layout was applied"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Result description or error"
+      },
+      {
+        "name": "segments_count",
+        "type": "int32",
+        "description": "Number of outer wall segments loaded"
+      },
+      {
+        "name": "inner_polygons_count",
+        "type": "int32",
+        "description": "Number of inner contour polygons loaded"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current operation status"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+# Goal
+int64 area_id
+---
+# Result
+bool locked
+bool found
+string message
+---
+# Feedback
+string status

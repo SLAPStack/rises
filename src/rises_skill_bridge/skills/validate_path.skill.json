@@ -1,0 +1,47 @@
+{
+  "id": "validate_path",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/ValidatePath",
+  "default_path": "/skill/validate_path",
+  "description": "Validates a navigation path against geofence boundaries and known/unknown obstacles. Returns whether the path is blocked and the reason. Use before executing any navigation to ensure safety.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "path",
+        "type": "nav_msgs/Path",
+        "description": "The planned navigation path to validate against the geofence map",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "blocked",
+        "type": "bool",
+        "description": "True if the path intersects obstacles or exits geofence boundaries"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Human-readable reason if blocked, empty if safe"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current validation status"
+      }
+    ]
+  }
+}

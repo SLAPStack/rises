@@ -1,0 +1,11 @@
+# Request
+int64 area_id   # ID of the area to lock/unlock
+bool lock       # true = lock, false = unlock
+float64 x0      # AABB min x (only used when lock=true)
+float64 y0      # AABB min y (only used when lock=true)
+float64 x1      # AABB max x (only used when lock=true)
+float64 y1      # AABB max y (only used when lock=true)
+---
+# Response
+bool success    # Whether the operation was applied successfully
+string message  # Optional status message

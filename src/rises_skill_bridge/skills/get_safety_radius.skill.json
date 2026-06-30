@@ -1,0 +1,36 @@
+{
+  "id": "get_safety_radius",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/GetSafetyRadius",
+  "default_path": "/skill/get_safety_radius",
+  "description": "Queries the current safety circle radius around the robot.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "radius",
+        "type": "float32",
+        "description": "Current safety radius in meters"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current query status"
+      }
+    ]
+  }
+}

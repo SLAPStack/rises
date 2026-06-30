@@ -1,0 +1,152 @@
+# ===============================================================================
+# Configuration for geofensing_map_updates_ARISE bagfile
+# ===============================================================================
+#
+# Bagfile: <your-bagfiles-dir>/geofensing_map_updates_ARISE
+# Storage: sqlite3
+# AGVs: 1  (id0 → agv_0)
+#
+# Topics in bagfile:
+#   /mqtt/agv/id0/order           → remapped to /agv_0/order
+#   /mqtt/discerning_safety_map   → message_translator_node (translator) input
+#   /mqtt/warehouse_contours      → message_translator_node (translator) input
+#   /mqtt/agv/id0/instantActions  (empty – no remap needed)
+#   /mqtt/agv/id0/connection      (empty – no remap needed)
+#
+# No laserscan in this bag – pure map-update / order scenario.
+# The translator (message_translator_node) is enabled per-AGV to convert the
+# MQTT JSON messages into rises_interfaces map-update service calls.
+# ===============================================================================
+
+mode: central
+
+agv_namespaces:
+  - agv_0
+
+# No per-AGV scan topic remaps – bag has no laserscan topics
+agv_scan_topic_remaps: {}
+
+ros_domain_id: 0
+startup_delay: 2.0
+health_check_interval: 5.0
+max_startup_retries: 3
+
+# ===============================================================================
+# Docker Settings
+# ===============================================================================
+docker:
+  network_mode: "host"
+  restart_policy: "no"
+  remove_on_exit: false
+  log_driver: "json-file"
+  log_max_size: "10m"
+  log_max_file: 3
+
+# ===============================================================================
+# Central Container
+# ===============================================================================
+central:
+  image: "rises:central"
+  dockerfile: "central.dockerfile"
+  container_name: "central_bridge"
+
+  # Map update buffering (bag delivers all updates at once on startup)
+  enable_buffering: true
+  buffer_timeout: 1.0
+  replay_rate: 33.0
+
+  target_frame: "map"
+  base_link_pub_rate: 20.0
+
+  use_sim_time: true
+
+  launch_rviz: true
+  rviz_namespace: "agv_0"
+
+  # Rosbag playback
+  play_rosbag: true
+  bag_file: "<your-bagfiles-dir>/geofensing_map_updates_ARISE"
+  rosbag_rate: 1.0
+  rosbag_loop: false
+  rosbag_delay: 5.0
+  storage: "sqlite3"
+
+  # Only remap the order topic; MQTT map topics are consumed directly by the
+  # per-AGV translator node and must NOT be suppressed here.
+  rosbag_remaps: "/mqtt/agv/id0/order:=/agv_0/order"
+
+  # No JSON pre-initialization for this scenario (using live bag data)
+  wait_for_geofence_ready: false
+  geofence_ready_timeout: 30.0
+
+# ===============================================================================
+# AGV Container Settings
+# ===============================================================================
+agv:
+  image: "rises:base"
+  dockerfile: "central.dockerfile"
+  container_prefix: "agv"
+
+  # --- Geofence Settings ---
+  enable_safety_circle: true
+  safety_circle_radius: 0.5
+  visualizer_enabled: true
+  use_namespace_for_map_frame: false
+  target_frame: "map"
+  base_link_frame: "base_link"
+
+  # --- Robot Filtering ---
+  enable_robot_filtering: false
+  robot_footprint_type: "circle"
+  robot_footprint_radius: 0.5
+  robot_footprint_margin: 0.1
+
+  # --- Laserscan Preprocessor ---
+  # No laserscan in this bag – preprocessor will be idle
+  dynamic_laser_detection: false
+  segment_distance_threshold: 0.2
+  segment_angle_threshold_deg: 30.0
+
+  # --- Static TF Publisher ---
+  # No lidar in this bag – static TF not needed
+  publish_static_tf: false
+  static_tf_parent_frame: "base_link"
+  static_tf_child_frame: "laser_link"
+  static_tf_x: 0.0
+  static_tf_y: 0.0
+  static_tf_z: 0.0
+  static_tf_roll: 0.0
+  static_tf_pitch: 0.0
+  static_tf_yaw: 0.0
+  static_tf_use_namespace: true
+
+  # --- Translator (message_translator_node) ---
+  # Enabled: translates /mqtt/discerning_safety_map + /mqtt/warehouse_contours
+  # into rises_interfaces UpdateMap service calls on the geofence node.
+  translator_enabled: true
+  use_service_for_map_updates: true
+
+  # --- Grid-map node ---
+  # Enable to test grid-based occupancy alongside the spatial node
+  gridmap_enabled: true
+
+  # --- Validation Node ---
+  # No validation topics in this bagfile
+  validation_enabled: false
+  validation_output_file: ""
+
+  # --- Obstacle Report (VDA5050) ---
+  publish_report_always: true
+
+  # Scenario: selects params_rosbag.yaml in the entrypoint
+  scenario: "rosbag"
+
+  use_sim_time: true
+  log_level: "info"
+
+  # --- No JSON pre-initialization ---
+  # Map and contour data comes from the bag via the translator
+  obstacles_json_file: ""
+  contours_json_file: ""
+  publish_ready_signal: false
+  json_suppress_topics: []

@@ -1,0 +1,7 @@
+# Request
+nav_msgs/Path path  # The path to be validated against the geofence
+
+---
+# Response
+bool blocked  # True if the path is blocked (obstacle, locked area, or boundary)
+string reason  # Human-readable reason when blocked

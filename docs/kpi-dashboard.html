@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARISE Geofence — Validation KPIs</title>
+</head>
+<body>
+<style>
+  :root {
+    --ink: #10212b;
+    --muted: #5b6b75;
+    --faint: #8896a0;
+    --ground: #eef2f4;
+    --card: #ffffff;
+    --line: #d7dee2;
+    --accent: #0e7c86;
+    --accent-soft: #d6e9eb;
+    --good: #2f8f5b;
+    --good-soft: #e4f2ea;
+    --good-line: #b6dcc4;
+    --track: #eceff1;
+    --target: #c1452f;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 48px 28px 72px;
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--ground);
+    line-height: 1.5;
+  }
+  body { background: var(--ground); }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-size: 30px;
+    line-height: 1.15;
+    margin: 0 0 10px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 0;
+    max-width: 64ch;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .lede strong { color: var(--ink); font-weight: 600; }
+
+  .scenario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin: 22px 0 0;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .scenario div { display: flex; flex-direction: column; gap: 2px; }
+  .scenario dt { color: var(--faint); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
+  .scenario dd { margin: 0; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+
+  /* summary strip */
+  .summary {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 30px 0 8px;
+    padding: 18px 22px;
+    background: linear-gradient(90deg, var(--good-soft), #fff 70%);
+    border: 1px solid var(--good-line);
+    border-radius: 12px;
+  }
+  .summary .score {
+    font-family: var(--mono);
+    font-size: 34px;
+    font-weight: 600;
+    color: var(--good);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .summary .score small { font-size: 18px; color: var(--faint); }
+  .summary p { margin: 0; font-size: 14px; color: var(--muted); }
+  .summary p strong { color: var(--ink); }
+
+  h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 40px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* KPI cards */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .kpi-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .kpi-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .chip {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--good-soft);
+    color: var(--good);
+    border: 1px solid var(--good-line);
+    white-space: nowrap;
+  }
+  .kpi-value {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .kpi-value .unit { font-size: 15px; color: var(--faint); font-weight: 500; }
+  .kpi-target { font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+  .kpi-target b { font-family: var(--mono); color: var(--ink); font-weight: 600; }
+
+  /* threshold bar */
+  .track {
+    position: relative;
+    height: 10px;
+    background: var(--track);
+    border-radius: 6px;
+    overflow: visible;
+  }
+  .fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: linear-gradient(90deg, #57b07e, var(--good));
+    border-radius: 6px;
+  }
+  .tmark {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    width: 2px;
+    background: var(--target);
+  }
+  .tmark::after {
+    content: "target";
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: .04em;
+    color: var(--target);
+    white-space: nowrap;
+  }
+  .scale { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--faint); font-family: var(--mono); }
+  .note { font-size: 12px; color: var(--muted); }
+
+  /* backend comparison */
+  .cmp {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+  .cmprow { display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: center; padding: 12px 0; }
+  .cmprow + .cmprow { border-top: 1px solid var(--line); }
+  .cmprow .lbl { font-size: 13px; }
+  .cmprow .lbl small { display: block; color: var(--faint); font-size: 11px; }
+  .bars { display: flex; flex-direction: column; gap: 9px; }
+  .barline { display: grid; grid-template-columns: 64px 1fr 62px; gap: 10px; align-items: center; }
+  .barline .who { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .barwrap { height: 12px; background: var(--track); border-radius: 6px; overflow: hidden; }
+  .bar { height: 100%; border-radius: 6px; }
+  .bar.spatial { background: var(--accent); }
+  .bar.gridmap { background: #7fb9bd; }
+  .barline .num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+
+  /* chart */
+  .chartcard { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 22px 22px 18px; }
+  .chartcard figcaption { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 4px 0 16px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chart-scroll { overflow-x: auto; }
+  svg { display: block; max-width: 100%; height: auto; }
+
+  .radius-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+  .rad { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; text-align: center; }
+  .rad.best { border-color: var(--accent); background: var(--accent-soft); }
+  .rad .hz { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .rad .m { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 600; color: var(--ink); }
+  .rad .m small { font-size: 11px; color: var(--faint); font-weight: 500; }
+  .rad .tag { font-size: 10px; color: var(--accent); font-weight: 700; letter-spacing: .04em; }
+
+  footer { margin-top: 40px; font-size: 12px; color: var(--faint); line-height: 1.6; }
+  footer code { font-family: var(--mono); color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">ARISE · RISES · D4 validation</p>
+  <h1>Geofence Spatial-Safety — Validation KPIs</h1>
+  <p class="lede">LiDAR-based intruder detection for an autonomous warehouse AGV, measured on the
+  recorded demonstrator scenario. Every safety KPI <strong>meets or beats its target</strong>;
+  the spatial KD-tree backend is shown, with the occupancy-grid backend compared below.</p>
+
+  <dl class="scenario">
+    <div><dt>Scenario</dt><dd>andros warehouse · 300 s</dd></div>
+    <div><dt>Spawned intruders</dt><dd>88 moving</dd></div>
+    <div><dt>Platform</dt><dd>AiTEN EMP10S · 2-D LiDAR</dd></div>
+    <div><dt>Backend</dt><dd>spatial (KD-tree)</dd></div>
+    <div><dt>Run path</dt><dd>hardware-free (rosbag)</dd></div>
+  </dl>
+
+  <div class="summary">
+    <div class="score">5<small>/5</small></div>
+    <p><strong>All safety KPIs pass.</strong> Mean per-scan detection latency is ~35 ms,
+    100% of known map structure is matched, and ~97% of intruders are detected on the
+    conservative validator margin.</p>
+  </div>
+
+  <h2>Detection KPIs vs. targets</h2>
+  <div class="grid">
+
+    <!-- Static Structure Match Rate -->
+    <div class="kpi">
+      <div class="kpi-head"><span class="kpi-name">Static Structure Match Rate</span><span class="chip">PASS</span></div>
+      <div class="kpi-value">1.000</div>
+      <div class="kpi-target">Target <b>&gt; 0.98</b> · fraction of known map structure correctly matched</div>
+      <div class="track"><div class="fill" style="width:100%"></div><div class="tmark" style="left:80%"></div></div>
+      <div class="scale"><span>0.90</span><span>1.00</span></div>
+    </div>
+
+    <!-- Detection Ratio -->
+    <div class="kpi">
+      <div class="kpi-head"><span class="kpi-name">Detection Ratio</span><span class="chip">PASS</span></div>
+      <div class="kpi-value">0.966</div>
+      <div class="kpi-target">Target <b>&gt; 0.95</b> · 85 / 88 spawned intruders detected</div>
+      <div class="track"><div class="fill" style="width:66%"></div><div class="tmark" style="left:50%"></div></div>
+      <div class="scale"><span>0.90</span><span>1.00</span></div>
+    </div>
+
+    <!-- Detection Latency -->
+    <div class="kpi">
+      <div class="kpi-head"><span class="kpi-name">Detection Latency (avg)</span><span class="chip">PASS</span></div>
+      <div class="kpi-value">35.2<span class="unit"> ms</span></div>
+      <div class="kpi-target">Target <b>&lt; 2 s</b> · mean per-scan detection processing latency (40 Hz)</div>
+      <div class="track"><div class="fill" style="width:35%"></div></div>
+      <div class="scale"><span>0</span><span>50 ms</span><span>100 ms</span></div>
+    </div>
+
+    <!-- Miss Rate -->
+    <div class="kpi">
+      <div class="kpi-head"><span class="kpi-name">Miss Rate</span><span class="chip">PASS</span></div>
+      <div class="kpi-value">3.4<span class="unit"> %</span></div>
+      <div class="kpi-target">Target <b>&lt; 10 %</b> · spawned intruders not detected</div>
+      <div class="track"><div class="fill" style="width:22.7%"></div><div class="tmark" style="left:66.7%"></div></div>
+      <div class="scale"><span>0 %</span><span>15 %</span></div>
+    </div>
+
+    <!-- System Uptime -->
+    <div class="kpi">
+      <div class="kpi-head"><span class="kpi-name">System Uptime</span><span class="chip">PASS</span></div>
+      <div class="kpi-value">~100<span class="unit"> %</span></div>
+      <div class="kpi-target">Target <b>&gt; 99 %</b> · geofence-ready fraction of the window</div>
+      <div class="track"><div class="fill" style="width:100%"></div><div class="tmark" style="left:80%"></div></div>
+      <div class="scale"><span>95 %</span><span>100 %</span></div>
+    </div>
+
+    <!-- Aggregate note card -->
+    <div class="kpi" style="background:#f8fafb;">
+      <div class="kpi-head"><span class="kpi-name">Aggregate LiDAR Map-Match</span><span class="chip" style="background:#eef2f4;color:var(--muted);border-color:var(--line);">CONTEXT</span></div>
+      <div class="kpi-value" style="color:var(--muted)">≈ 0.63</div>
+      <div class="note">Intentionally below 1 — this aggregate <em>includes</em> the moving intruders,
+      which correctly do <em>not</em> match the map. The per-population metrics above are the safety measures.</div>
+    </div>
+
+  </div>
+
+  <h2>Backend comparison — spatial vs. occupancy grid</h2>
+  <div class="cmp">
+    <div class="cmprow">
+      <div class="lbl">Static Structure Match<small>higher is better · scale 0.90–1.00</small></div>
+      <div class="bars">
+        <div class="barline"><span class="who">Spatial</span><div class="barwrap"><div class="bar spatial" style="width:100%"></div></div><span class="num">1.000</span></div>
+        <div class="barline"><span class="who">Gridmap</span><div class="barwrap"><div class="bar gridmap" style="width:77%"></div></div><span class="num">0.977</span></div>
+      </div>
+    </div>
+    <div class="cmprow">
+      <div class="lbl">Detection Ratio<small>higher is better · scale 0.90–1.00</small></div>
+      <div class="bars">
+        <div class="barline"><span class="who">Spatial</span><div class="barwrap"><div class="bar spatial" style="width:66%"></div></div><span class="num">0.966</span></div>
+        <div class="barline"><span class="who">Gridmap</span><div class="barwrap"><div class="bar gridmap" style="width:43%"></div></div><span class="num">0.943</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Detection latency vs. LiDAR scan frequency</h2>
+  <figure class="chartcard" style="margin:0;">
+    <figcaption>Dedicated latency study — 150 obstacle-entry events per run, AGV speed 2.0 m/s.
+    Higher scan rates cut both the mean latency and its spread; returns flatten past 30 Hz.</figcaption>
+    <div class="legend">
+      <span><i class="swatch" style="background:#0e7c86"></i>Mean latency</span>
+      <span><i class="swatch" style="background:#c98a2b"></i>P95 latency</span>
+      <span><i class="swatch" style="background:#b9c6cc;height:8px;width:8px;border-radius:50%"></i>30 Hz — recommended operating point</span>
+    </div>
+    <div class="chart-scroll">
+      <svg viewBox="0 0 660 330" role="img" aria-label="Line chart of mean and P95 detection latency against scan frequency from 10 to 40 hertz">
+        <!-- gridlines + y labels (0,50,100,150 ms) -->
+        <g stroke="#e7ecee" stroke-width="1">
+          <line x1="60" y1="280" x2="620" y2="280"></line>
+          <line x1="60" y1="213.3" x2="620" y2="213.3"></line>
+          <line x1="60" y1="146.7" x2="620" y2="146.7"></line>
+          <line x1="60" y1="80" x2="620" y2="80"></line>
+        </g>
+        <g font-family="ui-monospace, Menlo, monospace" font-size="11" fill="#8896a0" text-anchor="end">
+          <text x="50" y="284">0</text>
+          <text x="50" y="217">50</text>
+          <text x="50" y="150">100</text>
+          <text x="50" y="84">150</text>
+        </g>
+        <text x="16" y="180" font-family="system-ui" font-size="11" fill="#5b6b75" transform="rotate(-90 16 180)" text-anchor="middle">latency (ms)</text>
+
+        <!-- 30 Hz emphasis -->
+        <line x1="420" y1="40" x2="420" y2="280" stroke="#b9c6cc" stroke-width="1.5" stroke-dasharray="4 4"></line>
+
+        <!-- area under mean -->
+        <path d="M60,152.8 L240,207.1 L420,229.9 L600,233.1 L600,280 L60,280 Z" fill="#0e7c86" fill-opacity="0.07"></path>
+
+        <!-- P95 line -->
+        <polyline points="60,53.5 240,150.9 420,193.1 600,198.9" fill="none" stroke="#c98a2b" stroke-width="2.5" stroke-linejoin="round"></polyline>
+        <!-- mean line -->
+        <polyline points="60,152.8 240,207.1 420,229.9 600,233.1" fill="none" stroke="#0e7c86" stroke-width="2.5" stroke-linejoin="round"></polyline>
+
+        <!-- P95 points + labels -->
+        <g fill="#c98a2b" font-family="ui-monospace, Menlo, monospace" font-size="11">
+          <circle cx="60" cy="53.5" r="3.5"></circle><text x="60" y="44" text-anchor="middle">169.9</text>
+          <circle cx="240" cy="150.9" r="3.5"></circle><text x="240" y="142" text-anchor="middle">96.8</text>
+          <circle cx="420" cy="193.1" r="3.5"></circle>
+          <circle cx="600" cy="198.9" r="3.5"></circle><text x="600" y="190" text-anchor="middle">60.8</text>
+        </g>
+        <!-- mean points + labels -->
+        <g fill="#0e7c86" font-family="ui-monospace, Menlo, monospace" font-size="11">
+          <circle cx="60" cy="152.8" r="4"></circle><text x="74" y="148">95.4</text>
+          <circle cx="240" cy="207.1" r="4"></circle><text x="252" y="203">54.7</text>
+          <circle cx="420" cy="229.9" r="5" stroke="#10212b" stroke-width="1.5"></circle><text x="432" y="244">37.6</text>
+          <circle cx="600" cy="233.1" r="4"></circle><text x="588" y="248" text-anchor="end">35.2</text>
+        </g>
+
+        <!-- x labels -->
+        <g font-family="ui-monospace, Menlo, monospace" font-size="12" fill="#10212b" text-anchor="middle">
+          <text x="60" y="302">10 Hz</text>
+          <text x="240" y="302">20 Hz</text>
+          <text x="420" y="302">30 Hz</text>
+          <text x="600" y="302">40 Hz</text>
+        </g>
+        <text x="340" y="322" font-family="system-ui" font-size="11" fill="#5b6b75" text-anchor="middle">LiDAR scan frequency</text>
+      </svg>
+    </div>
+
+    <div class="radius-row">
+      <div class="rad"><div class="hz">10 Hz</div><div class="m">3.35<small> m</small></div></div>
+      <div class="rad"><div class="hz">20 Hz</div><div class="m">3.02<small> m</small></div></div>
+      <div class="rad best"><div class="hz">30 Hz</div><div class="m">2.92<small> m</small></div><div class="tag">RECOMMENDED</div></div>
+      <div class="rad"><div class="hz">40 Hz</div><div class="m">2.88<small> m</small></div></div>
+    </div>
+    <p class="note" style="margin-top:12px;">Minimum required safety radius derived from a probabilistic stopping model
+    (99.999 % stop probability, deceleration 0.75 m/s²). 30 Hz balances responsiveness against processing load.</p>
+  </figure>
+
+  <footer>
+    Source: D4 validation pipeline (<code>scripts/export_kpis.py</code>). Detection Ratio is bounded by the validator's spawn↔detection
+    association margin (match tolerance 2.5 m / window 3.0 s); the geofence physically observed all 88 spawns.
+  </footer>
+</div>
+</body>
+</html>

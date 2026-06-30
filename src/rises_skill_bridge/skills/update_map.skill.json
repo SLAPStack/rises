@@ -1,0 +1,62 @@
+{
+  "id": "update_map",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/UpdateMap",
+  "default_path": "/skill/update_map",
+  "description": "Applies bulk obstacle additions and removals to the geofence map. Receives an array of obstacle updates (INSERT/DELETE) and modifies the live spatial index accordingly.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "updates",
+        "type": "rises_interfaces/ObstacleUpdateArray",
+        "description": "Array of obstacle insert/delete operations to apply",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "success",
+        "type": "bool",
+        "description": "True if all updates were applied"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Result description or error"
+      },
+      {
+        "name": "obstacles_added",
+        "type": "int32",
+        "description": "Number of obstacles inserted"
+      },
+      {
+        "name": "obstacles_removed",
+        "type": "int32",
+        "description": "Number of obstacles removed"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current operation status"
+      },
+      {
+        "name": "progress",
+        "type": "float32",
+        "description": "Progress 0.0 to 1.0"
+      }
+    ]
+  }
+}

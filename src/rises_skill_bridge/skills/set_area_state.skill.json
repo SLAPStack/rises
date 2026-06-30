@@ -1,0 +1,53 @@
+{
+  "id": "set_area_state",
+  "version": "1.0.0",
+  "type": "skill",
+  "package": "geofence_skills",
+  "interface": "action",
+  "datatype": "rises_interfaces/action/SetAreaState",
+  "default_path": "/skill/set_area_state",
+  "description": "Locks or unlocks a named area in the warehouse geofence map. Locked areas are treated as obstacles, preventing AGV entry. Used for multi-AGV coordination and zone access control.",
+  "functional_domains": [
+    "navigation"
+  ],
+  "parameters": {
+    "in": [
+      {
+        "name": "area_id",
+        "type": "int64",
+        "description": "Identifier of the area to lock or unlock",
+        "required": true
+      },
+      {
+        "name": "lock",
+        "type": "bool",
+        "description": "True to lock the area, false to unlock",
+        "required": true
+      },
+      {
+        "name": "meta.priority",
+        "type": "integer",
+        "default": 128
+      }
+    ],
+    "out": [
+      {
+        "name": "success",
+        "type": "bool",
+        "description": "True if the state change was applied"
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "description": "Human-readable result or error description"
+      }
+    ],
+    "feedback": [
+      {
+        "name": "status",
+        "type": "string",
+        "description": "Current operation status"
+      }
+    ]
+  }
+}

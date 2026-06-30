@@ -1,0 +1,10 @@
+{
+  "logLevel": "WARN",
+  "mongocOnly": true,
+  "troe": true,
+  "troeHost": "localhost",
+  "troePort": 5432,
+  "troeUser": "postgres",
+  "troePwd": "postgres",
+  "troePoolSize": 10
+}

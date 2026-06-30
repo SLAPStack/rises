@@ -1,0 +1,193 @@
+# ARISE FIWARE Stack — Condition Monitoring Dashboard
+#
+# Provides the IT visualization layer for the RISES system:
+#   - Orion-LD Context Broker (receives ROS 2 data via built-in DDS integration)
+#   - MongoDB (Orion-LD backend storage)
+#   - TimescaleDB (historical time-series data)
+#   - Mintaka (REST API for temporal queries)
+#   - Grafana (dashboards — auto-provisioned)
+#
+# Usage:
+#   docker compose up -d
+#   xdg-open http://localhost:3000    # Grafana (admin/admin)
+#   docker compose down               # stop
+#   docker compose down -v            # stop + remove data
+#
+# All services use host networking so Orion-LD can join the DDS domain
+# and receive ROS 2 topics directly from the robot network.
+
+services:
+  # ──────────────────────────────────────────────────────
+  # MongoDB — backend storage for Orion-LD
+  # Port 27017 on localhost
+  # ──────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: rises-mongodb
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────
+  # TimescaleDB — time-series storage for TROE (Temporal
+  # Representation of Entities)
+  # Port 5432 on localhost
+  # ──────────────────────────────────────────────────────
+  timescaledb:
+    image: timescale/timescaledb-ha:pg17-ts2.18
+    container_name: rises-timescaledb
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      POSTGRES_USER: ${TIMESCALE_USER:-postgres}
+      POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD:-postgres}
+      POSTGRES_DB: orion
+      PGPORT: ${TIMESCALE_PORT:-5432}
+    volumes:
+      - timescale_data:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -p ${TIMESCALE_PORT:-5432}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────
+  # Orion-LD — NGSI-LD Context Broker with built-in DDS
+  # Joins the ROS 2 DDS domain and maps topics to entities
+  # Port 1026 on localhost
+  # ──────────────────────────────────────────────────────
+  orion:
+    image: fiware/orion-ld:1.10.0-PRE-1711
+    container_name: rises-orion
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    command: -mongocOnly
+    network_mode: host
+    environment:
+      ORIONLD_MONGO_HOST: "localhost:27017"
+      ORIONLD_TROE: "TRUE"
+      ORIONLD_TROE_HOST: localhost
+      ORIONLD_TROE_PORT: ${TIMESCALE_PORT:-5432}
+      ORIONLD_TROE_USER: ${TIMESCALE_USER:-postgres}
+      ORIONLD_TROE_PWD: ${TIMESCALE_PASSWORD:-postgres}
+    volumes:
+      - ./config/orionld.json:/root/.orionld:ro,Z
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1026/version"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────
+  # Mintaka — temporal/historical NGSI-LD query API
+  # Port 8080 on localhost
+  # ──────────────────────────────────────────────────────
+  mintaka:
+    image: fiware/mintaka:0.6.18
+    container_name: rises-mintaka
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      DATASOURCES_DEFAULT_HOST: localhost
+      DATASOURCES_DEFAULT_PORT: ${TIMESCALE_PORT:-5432}
+      DATASOURCES_DEFAULT_DATABASE: orion
+      DATASOURCES_DEFAULT_USERNAME: ${TIMESCALE_USER:-postgres}
+      DATASOURCES_DEFAULT_PASSWORD: ${TIMESCALE_PASSWORD:-postgres}
+      MICRONAUT_SERVER_PORT: ${MINTAKA_PORT:-8080}
+      JAVA_TOOL_OPTIONS: "-XX:-UseContainerSupport"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${MINTAKA_PORT:-8080}/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────
+  # Grafana — condition monitoring dashboards
+  # Port 3000 on localhost
+  # ──────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rises-grafana
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,nline-plotlyjs-panel,volkovlabs-form-panel"
+      GF_SERVER_HTTP_PORT: ${GRAFANA_PORT:-3000}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,Z
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro,Z
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────
+  # DDS Enabler — eProsima's DDS-to-NGSI-LD bridge.
+  # Bridges DDS topics directly to Orion-LD NGSI-LD entities.
+  # Built from source using Vulcanexus as base.
+  # ──────────────────────────────────────────────────────
+  dds-enabler:
+    image: fiware-dds-enabler:latest
+    build:
+      context: ./dds-enabler
+      dockerfile: Dockerfile
+    container_name: rises-dds-enabler
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      orion:
+        condition: service_healthy
+    environment:
+      FASTDDS_DEFAULT_PROFILES_FILE: /config/fastdds_profiles.xml
+    volumes:
+      - ./config:/config:ro,Z
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongodb_data:
+  timescale_data:
+  grafana_data:

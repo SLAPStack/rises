@@ -1,0 +1,112 @@
+# Smoke config: andros moving-obstacles bag (300s slice), FIWARE + KPI export ON.
+# Map comes ENTIRELY from the bag (/mqtt/discerning_safety_map) -- no obstacles.json.
+# Frame/transform settings mirror geofence_current_bag.yaml: the bag carries the full
+# TF tree map -> agv_0_base_link -> agv_0_laser_link, so NO static lidar TF and NO
+# obstacle/boundary coordinate transforms (those mis-rotate the scan vs the map).
+mode: central
+agv_namespaces:
+- agv_0
+agv_scan_topic_remaps: {}
+ros_domain_id: 0
+startup_delay: 3.0
+health_check_interval: 5.0
+max_startup_retries: 3
+docker:
+  network_mode: host
+  restart_policy: 'no'
+  remove_on_exit: false
+  log_driver: json-file
+  log_max_size: 50m
+  log_max_file: 3
+fiware:
+  enabled: true
+  fiware_namespaces:
+  - agv_0
+  compose_dir: fiware
+  grafana_port: 3000
+  timescale_port: 5432
+  mintaka_port: 8080
+  grafana_user: admin
+  grafana_password: admin
+  timescale_user: postgres
+  timescale_password: postgres
+bridge:
+  dockerfile: central.dockerfile
+  enable_buffering: true
+  buffer_timeout: 1.0
+  replay_rate: 33.0
+  target_frame: map
+  base_link_pub_rate: 20.0
+  use_sim_time: true
+  launch_rviz: false
+  rviz_namespace: agv_0
+  rviz_config_file: ''
+  play_rosbag: true
+  bag_file: resources/smoke_bag_andros_300s
+  rosbag_rate: 1.0
+  rosbag_loop: false
+  rosbag_delay: 3.0
+  storage: sqlite3
+  rosbag_remaps: /unity/obstacle_spawn:=/validation/obstacle_spawn,/unity/obstacle_alert:=/validation/obstacle_alarm
+  wait_for_geofence_ready: true
+  geofence_ready_timeout: 60.0
+  use_service_for_map_updates: false
+agv:
+  image: rises:base
+  dockerfile: rises.dockerfile
+  scenario: rosbag
+  rises_mode: true
+  launch_skill_bridge: false
+  launch_mission_controller: false
+  launch_heatmap: true
+  launch_fiware_bridge: true
+  launch_leg_filter: false
+  enable_safety_circle: true
+  safety_circle_radius: 5.0
+  visualizer_enabled: false
+  use_namespace_for_map_frame: false
+  target_frame: map
+  base_link_frame: agv_0_base_link
+  enable_robot_filtering: false
+  robot_footprint_type: circle
+  robot_footprint_radius: 0.5
+  robot_footprint_margin: 0.1
+  dynamic_laser_detection: true
+  segment_distance_threshold: 0.2
+  segment_angle_threshold_deg: 30.0
+  publish_static_tf: false
+  publish_lidar_static_tf: false
+  lidar_transform_x: 0.0
+  lidar_transform_y: 0.0
+  lidar_transform_z: 0.0
+  lidar_transform_roll: 0.0
+  lidar_transform_pitch: 0.0
+  lidar_transform_yaw: 0.0
+  publish_unity_tf: false
+  publish_slapstack_tf: false
+  translator_enabled: false
+  use_service_for_map_updates: false
+  gridmap_enabled: false
+  validation_enabled: true
+  publish_report_always: true
+  use_sim_time: true
+  log_level: info
+  obstacles_json_file: ''
+  contours_json_file: ''
+  publish_ready_signal: true
+  json_suppress_topics: []
+  env_vars:
+    GEOFENCE_TF_PREFIX: ''
+    FLEET_TF_PREFIX: ''
+    GEOFENCE_SAFETY_RADIUS: '5.0'
+    GEOFENCE_VALIDATION_MATCH_WINDOW: '3.0'
+    GEOFENCE_VALIDATION_MATCH_TOLERANCE: '2.5'
+    GEOFENCE_TRANSFORM_OBSTACLES_ENABLED: 'false'
+    GEOFENCE_TRANSFORM_BOUNDARIES_ENABLED: 'false'
+    HEATMAP_GRID_CENTER_X: '64.0'
+    HEATMAP_GRID_CENTER_Y: '-17.0'
+    HEATMAP_GRID_WIDTH: '130.0'
+    HEATMAP_GRID_HEIGHT: '36.0'
+    HEATMAP_GAUSSIAN_SIGMA: '0.5'
+    HEATMAP_PREDICTION_HORIZON: '8.0'
+    HEATMAP_PREDICTION_STEP: '0.5'

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>test_support</name>
+  <version>0.0.0</version>
+  <description>Shared header-only helpers for ARISE unit and integration tests: fake clocks, lifecycle harness, oversize-message factories, temp JSON files, deterministic obstacle builders.</description>
+  <maintainer email="niklas.dietz@gmx.de">Niklas Dietz</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>rosgraph_msgs</depend>
+  <depend>rises_interfaces</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

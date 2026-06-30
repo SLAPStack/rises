@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  XML type definitions for ROS 2 message types used by the FIWARE bridge.
+  The DDS Enabler needs these to deserialize ROS 2 topics.
+
+  The fiware_bridge node publishes all fiware/* topics as std_msgs/String
+  containing JSON payloads. In DDS, this is represented as:
+    std_msgs::msg::dds_::String_  with a single "data_" field of type string.
+-->
+<types>
+    <type>
+        <struct name="std_msgs::msg::dds_::String_">
+            <member name="data_" type="string"/>
+        </struct>
+    </type>
+
+    <type>
+        <struct name="std_msgs::msg::dds_::Bool_">
+            <member name="data_" type="boolean"/>
+        </struct>
+    </type>
+</types>

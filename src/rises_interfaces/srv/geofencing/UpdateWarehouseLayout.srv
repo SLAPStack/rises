@@ -1,0 +1,11 @@
+# Service for updating warehouse layout (walls, boundaries)
+# Request: Warehouse contours to load
+rises_interfaces/Contours contours
+
+---
+
+# Response: Success status and diagnostic info
+bool success
+string message
+int32 segments_count
+int32 inner_polygons_count

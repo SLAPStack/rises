@@ -1,0 +1,240 @@
+# ==============================================================================
+# GEOFENCE STACK – DEFAULT SCENARIO (real robot, no simulation)
+# ==============================================================================
+#
+# Covers ALL nodes launched by geofence.launch.py:
+#   - geofence_node
+#   - laserscan_preprocessor_node
+#   - message_translator_node  (per-AGV translator, when translator_enabled:=true)
+#
+# Environment variable support:
+#   Every value can be overridden via $(env VAR_NAME default) at launch time.
+#   The launch system resolves these when the file is loaded with
+#   ParameterFile(allow_substs=True).
+#
+# Usage:
+#   ros2 launch rises_bringup geofence.launch.py namespace:=agv_0
+#   # params_default.yaml is the default – no extra arg needed.
+# ==============================================================================
+
+# "/**" matches any node in any namespace (namespace-agnostic).
+
+/**:
+  geofence_node:
+    ros__parameters:
+
+      # -- Safety circle ------------------------------------------------------
+      enable_safety_circle: $(env GEOFENCE_ENABLE_SAFETY_CIRCLE true)
+      safety_circle_radius: $(env GEOFENCE_SAFETY_RADIUS 0.5)
+
+      # -- Obstacle matching / processing mode --------------------------------
+      process_points_only:       $(env GEOFENCE_PROCESS_POINTS_ONLY true)
+      correspondence_tolerance:  $(env GEOFENCE_CORRESPONDENCE_TOLERANCE 0.10)
+
+      # -- Segment splitting --------------------------------------------------
+      segment_min_gap:         $(env GEOFENCE_SEGMENT_MIN_GAP 0.05)
+      segment_gap_multiplier:  $(env GEOFENCE_SEGMENT_GAP_MULTIPLIER 8.0)
+      lidar_angle_increment:   $(env GEOFENCE_LIDAR_ANGLE_INCREMENT 0.001745)
+      line_fit_tolerance:      $(env GEOFENCE_LINE_FIT_TOLERANCE 0.05)
+
+      # -- Visualisation ------------------------------------------------------
+      visualizer_enabled: $(env GEOFENCE_VISUALIZER_ENABLED true)
+
+      # -- Coordinate frames --------------------------------------------------
+      use_namespace_for_map_frame: $(env GEOFENCE_USE_NAMESPACE_FOR_MAP false)
+      target_frame:     $(env GEOFENCE_TARGET_FRAME map)
+      tf_prefix:        "$(env GEOFENCE_TF_PREFIX '')"
+      base_link_frame:  $(env GEOFENCE_BASE_LINK_FRAME base_link)
+
+      # -- Obstacle reporting -------------------------------------------------
+      publish_report_always: $(env GEOFENCE_PUBLISH_REPORT_ALWAYS true)
+      publish_report_in_local_frame: $(env GEOFENCE_PUBLISH_REPORT_IN_LOCAL_FRAME false)
+      report_output_frame: "$(env GEOFENCE_REPORT_OUTPUT_FRAME '')"
+      ignore_outside_warehouse: $(env GEOFENCE_IGNORE_OUTSIDE_WAREHOUSE false)
+
+      # -- Error segment tracking ---------------------------------------------
+      error_segment_tracker_cell_size: $(env GEOFENCE_ERROR_SEGMENT_TRACKER_CELL_SIZE 0.3)
+      error_segment_tracker_max_drift: $(env GEOFENCE_ERROR_SEGMENT_TRACKER_MAX_DRIFT 1.0)
+      min_segment_points:              $(env GEOFENCE_MIN_SEGMENT_POINTS 3)
+      enable_error_segment_tracking:   $(env GEOFENCE_ENABLE_ERROR_SEGMENT_TRACKING true)
+      report_error_segments_as_points: $(env GEOFENCE_REPORT_ERROR_SEGMENTS_AS_POINTS false)
+      outlier_filter_distance:         $(env GEOFENCE_OUTLIER_FILTER_DISTANCE 0.10)
+
+      # -- Height awareness ---------------------------------------------------
+      enable_height_awareness: $(env GEOFENCE_ENABLE_HEIGHT_AWARENESS false)
+      lidar_height_source:     $(env GEOFENCE_LIDAR_HEIGHT_SOURCE tf)
+      lidar_height_fixed:      $(env GEOFENCE_LIDAR_HEIGHT_FIXED 0.0)
+      lidar_frame:             $(env GEOFENCE_LIDAR_FRAME laser_link)
+      height_match_tolerance:  $(env GEOFENCE_HEIGHT_MATCH_TOLERANCE 0.05)
+      height_match_mode:       $(env GEOFENCE_HEIGHT_MATCH_MODE intersection)
+
+      # -- Lifecycle ----------------------------------------------------------
+      auto_activate: true
+
+      # -- Multi-robot / robot filtering --------------------------------------
+      enable_robot_filtering:     $(env GEOFENCE_ENABLE_ROBOT_FILTERING false)
+      robot_ids:                  ["$(env ROBOT_ID self)"]
+      robot_pose_topic_prefix:    $(env GEOFENCE_ROBOT_POSE_TOPIC_PREFIX robot_pose)
+      robot_pose_max_age_ms:      $(env GEOFENCE_ROBOT_POSE_MAX_AGE_MS 2000)
+      default_robot_footprint_type:   $(env GEOFENCE_ROBOT_FOOTPRINT_TYPE circle)
+      default_robot_footprint_radius: $(env GEOFENCE_ROBOT_FOOTPRINT_RADIUS 0.5)
+      default_robot_footprint_width:  $(env GEOFENCE_ROBOT_FOOTPRINT_WIDTH 0.6)
+      default_robot_footprint_height: $(env GEOFENCE_ROBOT_FOOTPRINT_HEIGHT 0.8)
+      default_robot_footprint_margin: $(env GEOFENCE_ROBOT_FOOTPRINT_MARGIN 0.1)
+
+      # -- JSON pre-initialisation --------------------------------------------
+      obstacles_json_file:  "$(env GEOFENCE_OBSTACLES_JSON_FILE '')"
+      contours_json_file:   "$(env GEOFENCE_CONTOURS_JSON_FILE '')"
+      publish_ready_signal: $(env GEOFENCE_PUBLISH_READY_SIGNAL false)
+
+      # -- Coordinate transform (disabled by default, Unity sets via env vars) -
+      transform_obstacles_enabled:  $(env GEOFENCE_TRANSFORM_OBSTACLES_ENABLED false)
+      transform_boundaries_enabled: $(env GEOFENCE_TRANSFORM_BOUNDARIES_ENABLED false)
+      transform_areas_enabled:      $(env GEOFENCE_TRANSFORM_AREAS_ENABLED false)
+      negate_y_in_ros:              $(env GEOFENCE_NEGATE_Y_IN_ROS false)
+      obstacle_transform_matrix:  [$(env GEOFENCE_OBSTACLE_TRANSFORM_MATRIX "1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0")]
+      boundary_transform_matrix:  [$(env GEOFENCE_BOUNDARY_TRANSFORM_MATRIX "1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0")]
+      area_transform_matrix:      [$(env GEOFENCE_AREA_TRANSFORM_MATRIX "1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0")]
+
+      # -- Time ---------------------------------------------------------------
+      use_sim_time: false
+
+  # ---------------------------------------------------------------------------
+  laserscan_preprocessor_node:
+    ros__parameters:
+
+      # -- Frames -------------------------------------------------------------
+      global_frame: $(env LASERSCAN_GLOBAL_FRAME map)
+
+      # -- Laser inputs -------------------------------------------------------
+      laser_frame_ids: ["$(env LASERSCAN_FRAME_ID laser_link)"]
+      laser_topics:    ["$(env LASERSCAN_TOPIC scan_0)"]
+
+      # -- Segmentation -------------------------------------------------------
+      distance_threshold:  $(env LASERSCAN_DISTANCE_THRESHOLD 0.2)
+      angle_threshold_deg: $(env LASERSCAN_ANGLE_THRESHOLD_DEG 30.0)
+      publish_points_only: $(env LASERSCAN_PUBLISH_POINTS_ONLY false)
+
+      # -- DBSCAN clustering --------------------------------------------------
+      dbscan_eps:        $(env LASERSCAN_DBSCAN_EPS 0.3)
+      dbscan_min_points: $(env LASERSCAN_DBSCAN_MIN_POINTS 3)
+
+      # -- Region growing -----------------------------------------------------
+      region_grow_threshold: $(env LASERSCAN_REGION_GROW_THRESHOLD 0.15)
+
+      # -- Filtering ----------------------------------------------------------
+      min_segment_size:          $(env LASERSCAN_MIN_SEGMENT_SIZE 3)
+      outlier_removal_factor:    $(env LASERSCAN_OUTLIER_REMOVAL_FACTOR 2.0)
+      use_adaptive_thresholding: $(env LASERSCAN_USE_ADAPTIVE_THRESHOLDING true)
+
+      # -- Lifecycle ----------------------------------------------------------
+      auto_activate: true
+
+      # -- Time ---------------------------------------------------------------
+      use_sim_time: false
+
+  # ---------------------------------------------------------------------------
+  message_translator_node:
+    ros__parameters:
+
+      # -- Frames -------------------------------------------------------------
+      target_frame:   $(env TRANSLATOR_TARGET_FRAME base_link)
+
+      # -- TF publishing ------------------------------------------------------
+      base_link_pub_rate: $(env TRANSLATOR_BASE_LINK_PUB_RATE 20.0)
+
+      # -- Map-update buffering -----------------------------------------------
+      enable_buffering: $(env TRANSLATOR_ENABLE_BUFFERING false)
+      buffer_timeout:   $(env TRANSLATOR_BUFFER_TIMEOUT 1.0)
+
+      # -- Fleet size ---------------------------------------------------------
+      agv_count: $(env TRANSLATOR_AGV_COUNT 1)
+      use_service_for_map_updates: $(env TRANSLATOR_USE_SERVICE_FOR_MAP_UPDATES true)
+
+      # -- VDA5050 state publishing -------------------------------------------
+      position_source:     $(env TRANSLATOR_POSITION_SOURCE tf)
+      state_publish_rate:  $(env TRANSLATOR_STATE_PUBLISH_RATE 1.0)
+
+      # -- Time ---------------------------------------------------------------
+      use_sim_time: false
+
+  # ---------------------------------------------------------------------------
+  # Must match the runtime node name (geofence_gridmap_node); the old
+  # "geofencing_gridmap_node" matched nothing, so the gridmap node never
+  # received these params (incl. auto_activate) and never activated.
+  geofence_gridmap_node:
+    ros__parameters:
+
+      # -- Safety circle -------------------------------------------------------
+      enable_safety_circle: $(env GEOFENCE_ENABLE_SAFETY_CIRCLE true)
+      safety_circle_radius: $(env GEOFENCE_SAFETY_RADIUS 0.5)
+
+      # -- Obstacle report (per-segment matched/unmatched -> KPI pipeline) -----
+      publish_report_always: $(env GEOFENCE_PUBLISH_REPORT_ALWAYS true)
+      publish_report_in_local_frame: $(env GEOFENCE_PUBLISH_REPORT_IN_LOCAL_FRAME false)
+      report_output_frame: "$(env GEOFENCE_REPORT_OUTPUT_FRAME '')"
+
+      # -- Visualisation -------------------------------------------------------
+      visualizer_enabled: $(env GEOFENCE_VISUALIZER_ENABLED true)
+
+      # -- Coordinate frames ---------------------------------------------------
+      use_namespace_for_map_frame: $(env GEOFENCE_USE_NAMESPACE_FOR_MAP false)
+      target_frame:    $(env GEOFENCE_TARGET_FRAME map)
+      base_link_frame: $(env GEOFENCE_BASE_LINK_FRAME base_link)
+
+      # -- Grid configuration --------------------------------------------------
+      grid_resolution:           $(env GRIDMAP_RESOLUTION 0.05)
+      grid_width_meters:         $(env GRIDMAP_WIDTH 100.0)
+      grid_height_meters:        $(env GRIDMAP_HEIGHT 100.0)
+      grid_origin_x:             $(env GRIDMAP_ORIGIN_X -50.0)
+      grid_origin_y:             $(env GRIDMAP_ORIGIN_Y -50.0)
+      obstacle_inflation_radius: $(env GRIDMAP_INFLATION_RADIUS 0.0)
+
+      # -- Multi-robot / robot filtering --------------------------------------
+      enable_robot_filtering:         $(env GEOFENCE_ENABLE_ROBOT_FILTERING false)
+      robot_ids:                      ["$(env ROBOT_ID self)"]
+      robot_pose_topic_prefix:        $(env GEOFENCE_ROBOT_POSE_TOPIC_PREFIX robot_pose)
+      default_robot_footprint_type:   $(env GEOFENCE_ROBOT_FOOTPRINT_TYPE circle)
+      default_robot_footprint_radius: $(env GEOFENCE_ROBOT_FOOTPRINT_RADIUS 0.5)
+      default_robot_footprint_width:  $(env GEOFENCE_ROBOT_FOOTPRINT_WIDTH 0.6)
+      default_robot_footprint_height: $(env GEOFENCE_ROBOT_FOOTPRINT_HEIGHT 0.8)
+      default_robot_footprint_margin: $(env GEOFENCE_ROBOT_FOOTPRINT_MARGIN 0.1)
+
+      # -- JSON pre-initialisation --------------------------------------------
+      obstacles_json_file:  "$(env GEOFENCE_OBSTACLES_JSON_FILE '')"
+      contours_json_file:   "$(env GEOFENCE_CONTOURS_JSON_FILE '')"
+      publish_ready_signal: $(env GEOFENCE_PUBLISH_READY_SIGNAL false)
+
+      # -- Coordinate transform (disabled by default, Unity sets via env vars) -
+      transform_obstacles_enabled:  $(env GEOFENCE_TRANSFORM_OBSTACLES_ENABLED false)
+      transform_boundaries_enabled: $(env GEOFENCE_TRANSFORM_BOUNDARIES_ENABLED false)
+      transform_areas_enabled:      $(env GEOFENCE_TRANSFORM_AREAS_ENABLED false)
+      negate_y_in_ros:              $(env GEOFENCE_NEGATE_Y_IN_ROS false)
+      obstacle_transform_matrix:  [1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0]
+      boundary_transform_matrix:  [1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0]
+      area_transform_matrix:      [1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0]
+
+      # -- Lifecycle ----------------------------------------------------------
+      auto_activate: true
+
+      # -- Time ---------------------------------------------------------------
+      use_sim_time: false
+
+  # ---------------------------------------------------------------------------
+  fleet_interface_node:
+    ros__parameters:
+
+      # -- Frames -------------------------------------------------------------
+      global_frame:    $(env FLEET_TARGET_FRAME map)
+      target_frame:    $(env FLEET_BASE_LINK_FRAME base_link)
+      tf_prefix:       "$(env FLEET_TF_PREFIX '')"
+
+      # -- MQTT AGV identity (e.g. "id0" → /mqtt/agv/id0/obstacle_state) -----
+      mqtt_agv_name: "$(env FLEET_MQTT_AGV_NAME '')"
+
+      # -- VDA5050 state publishing -------------------------------------------
+      position_source:    $(env FLEET_POSITION_SOURCE tf)
+      state_publish_rate: $(env FLEET_STATE_PUBLISH_RATE 1.0)
+
+      # -- Time ---------------------------------------------------------------
+      use_sim_time: false

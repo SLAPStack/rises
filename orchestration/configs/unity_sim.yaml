@@ -1,0 +1,135 @@
+# ===============================================================================
+# Unity Simulation Configuration
+# ===============================================================================
+#
+# Deploy mode: unity
+#   Bridge container runs unity.launch.py (ROS-TCP-Endpoint + centralized translator)
+#   AGV containers run geofence.launch.py with params_unity.yaml
+#
+# Docker stages:
+#   base  -> rises:base  (AGV containers: geofence + laserscan preprocessor)
+#   unity -> rises:unity  (Bridge container: TCP endpoint + translator)
+#
+# Usage:
+#   python3 -m orchestration.cli --config orchestration/configs/unity_sim.yaml --build
+#   python3 -m orchestration.cli --config orchestration/configs/unity_sim.yaml
+# ===============================================================================
+
+mode: unity
+
+agv_namespaces:
+  - agv_0
+
+ros_domain_id: 0
+startup_delay: 2.0
+health_check_interval: 5.0
+max_startup_retries: 3
+
+# ===============================================================================
+# Docker Settings
+# ===============================================================================
+docker:
+  network_mode: "host"
+  restart_policy: "no"
+  remove_on_exit: false
+  log_driver: "json-file"
+  log_max_size: "10m"
+  log_max_file: 3
+
+# ===============================================================================
+# Bridge Container (unity mode)
+# ===============================================================================
+# Launches: ROS-TCP-Endpoint + centralized_translator (message_translator_node)
+bridge:
+  dockerfile: "central.dockerfile"
+
+  # TCP endpoint for Unity <-> ROS bridge
+  tcp_ip: "0.0.0.0"
+  tcp_port: 10000
+
+  # Translator settings
+  enable_buffering: true
+  buffer_timeout: 1.0
+  replay_rate: 33.0
+  target_frame: "map"
+  base_link_pub_rate: 20.0
+  use_sim_time: false
+
+  # Visualization
+  launch_rviz: false
+  rviz_namespace: "agv_0"
+
+  # Rosbag (optional – alongside Unity, disabled by default)
+  play_rosbag: false
+  bag_file: ""
+  rosbag_rate: 1.0
+  rosbag_loop: false
+  rosbag_delay: 5.0
+  storage: "sqlite3"
+
+  # Geofence ready waiting
+  wait_for_geofence_ready: true
+  geofence_ready_timeout: 30.0
+
+# ===============================================================================
+# AGV Container Settings
+# ===============================================================================
+agv:
+  image: "rises:base"
+  dockerfile: "central.dockerfile"
+  container_prefix: "agv"
+
+  # Scenario: selects params_unity.yaml in the entrypoint
+  scenario: "unity"
+
+  # --- Geofence Settings ---
+  enable_safety_circle: true
+  safety_circle_radius: 0.5
+  visualizer_enabled: true
+  use_namespace_for_map_frame: false
+  target_frame: "map"
+  base_link_frame: "base_link"
+
+  # --- Robot Filtering ---
+  enable_robot_filtering: false
+  robot_footprint_type: "circle"
+  robot_footprint_radius: 0.5
+  robot_footprint_margin: 0.1
+
+  # --- Laserscan Preprocessor ---
+  dynamic_laser_detection: false
+  segment_distance_threshold: 0.2
+  segment_angle_threshold_deg: 30.0
+
+  # --- Static TF (generic) ---
+  publish_static_tf: false
+
+  # --- Lidar Static TF ---
+  publish_lidar_static_tf: false
+
+  # --- Coordinate-system TFs ---
+  publish_unity_tf: true        # map -> unity_map (+90 deg Z)
+  publish_slapstack_tf: false
+
+  # --- Translator (per-AGV) ---
+  translator_enabled: false
+  use_service_for_map_updates: true
+
+  # Grid-map node
+  gridmap_enabled: false
+
+  # --- Validation Node ---
+  validation_enabled: false
+  validation_output_file: ""
+
+  # --- Obstacle Report (VDA5050) ---
+  publish_report_always: true
+
+  use_sim_time: false
+  log_level: "info"
+
+  # No JSON pre-initialization (map comes from Unity via translator)
+  obstacles_json_file: ""
+  contours_json_file: ""
+  publish_ready_signal: false
+  json_suppress_topics: []
